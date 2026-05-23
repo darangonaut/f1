@@ -115,7 +115,7 @@ final class F1Repository
                 UNION SELECT MAX(fetched_at) FROM sessions
                 UNION SELECT MAX(fetched_at) FROM session_results
                 UNION SELECT MAX(fetched_at) FROM drivers
-            )',
+            ) AS t',
         );
         return $max ? new \DateTimeImmutable($max) : null;
     }
