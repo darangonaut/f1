@@ -1,0 +1,78 @@
+{block content}
+
+{var $sessionLabels = [
+	'Practice' => 'Tréning',
+	'Qualifying' => 'Kvalifikácia',
+	'Race' => 'Pretek',
+]}
+
+<a href="{plink Home:default}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Sezóna</a>
+
+<h2 class="text-xl font-black mt-0 mb-1 uppercase tracking-tight">{$meeting['meeting_official_name'] ?? $meeting['meeting_name'] ?? '—'}</h2>
+
+<div class="bg-white border-2 border-black p-[18px] mb-6">
+	<div class="flex justify-between items-baseline gap-3">
+		<strong class="text-[15px]">{$meeting['circuit_short_name']}, {$meeting['country_name']}</strong>
+		<span class="inline-block px-2 py-[3px] bg-black text-white text-[11px] font-bold tracking-[0.06em] uppercase">{$meeting['country_code']}</span>
+	</div>
+	<div class="flex justify-between items-baseline gap-3 mt-2">
+		<span class="text-[11px] font-bold uppercase tracking-[0.08em]">Začiatok víkendu</span>
+		<span class="text-[15px] font-semibold">{$meeting['date_start']|date:'j. n. Y'}</span>
+	</div>
+</div>
+
+{foreach $sessions as $s}
+	{var $sess = $s['session']}
+	<h3 class="mt-8 flex items-baseline justify-between gap-3 text-[13px] font-black uppercase tracking-[0.14em] pb-1.5 border-b-[3px] border-black">
+		<span class="flex items-center gap-2.5">
+			<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+			{$sessionLabels[$sess['session_type']] ?? $sess['session_type']} · {$sess['session_name']}
+		</span>
+		<span class="text-[11px] text-gray-500 normal-case tracking-normal font-bold">{$sess['date_start']|date:'j. n. · H:i'}</span>
+	</h3>
+
+	{if $s['is_future']}
+		<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Ešte sa nekonalo</div>
+	{elseif empty($s['positions'])}
+		<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Žiadne dáta o výsledkoch</div>
+	{else}
+		{var $isRace = in_array($sess['session_type'], ['Race'], true)}
+		<table class="w-full border-collapse tabular-nums">
+			<thead>
+				<tr class="bg-black text-white">
+					<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[42px]">#</th>
+					<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Jazdec</th>
+					<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Tím</th>
+					<th n:if="$isRace" class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[60px]">Body</th>
+					<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[70px]">Status</th>
+				</tr>
+			</thead>
+			<tbody>
+			{foreach $s['positions'] as $row}
+				{var $pos = $row['position'] ?? null}
+				<tr class="border-b-2 border-gray-100 hover:bg-amber-50 {$pos === 1 ? 'bg-red-50 font-bold' : ''}">
+					<td class="px-2 py-2.5 font-black text-lg w-[42px] {$pos === 1 ? 'bg-black text-f1-red' : ($pos === 2 ? 'bg-gray-500 text-white' : ($pos === 3 ? 'bg-amber-800 text-white' : 'text-black'))}">
+						{$pos ?? '—'}
+					</td>
+					<td class="px-2 py-2.5 text-[15px] font-semibold">
+						{if $row['driver']}{$row['driver']['full_name']}{else}#{$row['driver_number']}{/if}
+					</td>
+					<td class="px-2 py-2.5 text-[15px] font-semibold text-gray-500">{$row['driver']['team_name'] ?? ''}</td>
+					<td n:if="$isRace" class="px-2 py-2.5 text-right text-[15px] font-bold">
+						{if isset($row['points']) && $row['points'] > 0}{$row['points']|number:0,'',''}{/if}
+					</td>
+					<td class="px-2 py-2.5 text-right text-[11px] text-gray-500 font-bold">
+						{if !empty($row['dnf'])}DNF
+						{elseif !empty($row['dns'])}DNS
+						{elseif !empty($row['dsq'])}DSQ
+						{elseif isset($row['number_of_laps'])}{$row['number_of_laps']}L
+						{/if}
+					</td>
+				</tr>
+			{/foreach}
+			</tbody>
+		</table>
+	{/if}
+{/foreach}
+
+{/block}

@@ -1,0 +1,79 @@
+{block content}
+
+{define h2}
+	<h2 class="text-[13px] font-black uppercase tracking-[0.14em] text-black mt-8 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+		<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+		{$title}
+	</h2>
+{/define}
+
+{if $next}
+	{include h2, title => 'Najbližšie podujatie'}
+	<div class="bg-white border-2 border-black p-[18px] mb-2">
+		<div class="flex justify-between items-baseline gap-3">
+			<strong class="text-[15px]">{$next['meeting_official_name'] ?? $next['meeting_name'] ?? ''}</strong>
+			<span class="inline-block px-2 py-[3px] bg-black text-white text-[11px] font-bold tracking-[0.06em] uppercase">{$next['country_code']}</span>
+		</div>
+		<div class="flex justify-between items-baseline gap-3 mt-2">
+			<span class="text-[11px] font-bold uppercase tracking-[0.08em]">Okruh</span>
+			<span class="text-[15px] font-semibold">{$next['circuit_short_name']}, {$next['location']}</span>
+		</div>
+		<div class="flex justify-between items-baseline gap-3 mt-2">
+			<span class="text-[11px] font-bold uppercase tracking-[0.08em]">Dátum</span>
+			<span class="text-[15px] font-semibold">{$next['date_start']|date:'j. n. Y · H:i'}</span>
+		</div>
+	</div>
+{/if}
+
+{if $lastResults}
+	{include h2, title => 'Posledný víťaz'}
+	<a href="{plink Race:default, meetingKey => $lastResults['meeting']['meeting_key']}" class="block border-0">
+		<div class="bg-amber-50 border-2 border-f1-red p-[18px] mb-4 hover:bg-amber-100 transition-colors">
+			<div class="flex justify-between items-baseline gap-3">
+				<strong class="text-lg text-black">{$lastResults['winner']['driver']['full_name']}</strong>
+				<span class="inline-block px-2 py-[3px] bg-f1-red text-white text-[11px] font-bold tracking-[0.06em] uppercase">{$lastResults['winner']['driver']['team_name']}</span>
+			</div>
+			<div class="flex justify-between items-baseline gap-3 mt-2 text-[11px] font-bold uppercase tracking-[0.08em]">
+				<span>{$lastResults['meeting']['meeting_name'] ?? '—'}</span>
+				<span>{$lastResults['meeting']['date_start']|date:'j. n. Y'}</span>
+			</div>
+		</div>
+	</a>
+{/if}
+
+{include h2, title => 'Sezóna ' . $year}
+<div>
+	{foreach $meetings as $m}
+		{var $state = $m['is_past'] ? 'done' : ($m['is_live'] ? 'live' : ($m['is_next'] ? 'next' : 'upcoming'))}
+		<a href="{plink Race:default, meetingKey => $m['meeting_key']}"
+		   class="
+			flex justify-between items-baseline gap-3 py-[11px] px-2 border-b-2 border-gray-100 text-[15px] font-semibold transition-colors
+			{$state === 'done' ? 'text-black hover:bg-amber-50' : ''}
+			{$state === 'upcoming' ? 'text-gray-400 hover:bg-amber-50' : ''}
+			{$state === 'live' ? 'bg-f1-red text-white border-t-2 border-t-black border-b-black font-black text-base hover:bg-f1-red-dark' : ''}
+			{$state === 'next' ? 'bg-black text-white border-t-2 border-t-f1-red border-b-f1-red font-black text-base hover:bg-gray-900' : ''}
+		">
+			<span class="flex gap-2.5 items-baseline flex-1 min-w-0">
+				<span class="inline-block w-[18px] font-black text-base
+					{$state === 'done' ? 'text-f1-red' : ''}
+					{$state === 'live' ? 'text-white animate-pulse-live' : ''}
+					{$state === 'next' ? 'text-f1-red' : ''}
+				">{if $state === 'done'}✓{elseif $state === 'live'}●{elseif $state === 'next'}→{/if}</span>
+				<span class="inline-block w-[60px] text-[13px] font-bold
+					{$state === 'live' || $state === 'next' ? 'text-f1-red' : ''}
+					{$state === 'done' ? 'text-gray-500' : ''}
+					{$state === 'upcoming' ? 'text-gray-300' : ''}
+				">{$m['date_start']|date:'j. n.'}</span>
+				<span class="overflow-hidden text-ellipsis">
+					{$m['meeting_name'] ?? $m['meeting_official_name'] ?? '—'}
+					{if $m['winner']}<span class="inline-block font-bold text-f1-red uppercase text-xs tracking-[0.05em] ml-1">{$m['winner']}</span>{/if}
+				</span>
+			</span>
+			<span class="text-xs font-bold uppercase tracking-[0.05em] whitespace-nowrap
+				{$state === 'live' || $state === 'next' ? 'text-gray-400' : 'text-gray-500'}
+			">{$m['circuit_short_name']}</span>
+		</a>
+	{/foreach}
+</div>
+
+{/block}

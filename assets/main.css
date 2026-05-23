@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@source "../app/Presentation/**/*.latte";
+
+@theme {
+  --color-f1-red: #e10600;
+  --color-f1-red-dark: #b00500;
+  --font-display: "Titillium Web", "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-display);
+    background: #fff;
+    color: #000;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer utilities {
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1 }
+    50% { opacity: 0.4 }
+  }
+  .animate-pulse-live { animation: pulse-live 1.4s infinite }
+}

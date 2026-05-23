@@ -1,0 +1,10 @@
+.DS_Store
+.idea/
+.vscode/
+node_modules/
+vendor/
+temp/
+log/
+www/assets/
+db.sqlite
+.env
