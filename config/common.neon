@@ -1,6 +1,9 @@
 # see https://doc.nette.org/en/configuring
 
 parameters:
+	telegram:
+		botToken: ''
+		chatId: ''
 
 
 application:
@@ -40,3 +43,4 @@ di:
 services:
 	- App\Services\OpenF1Client
 	- App\Repositories\F1Repository
+	- App\Services\TelegramNotifier(%telegram.botToken%, %telegram.chatId%)
