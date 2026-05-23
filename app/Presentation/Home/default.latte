@@ -47,30 +47,34 @@
 		{var $state = $m['is_past'] ? 'done' : ($m['is_live'] ? 'live' : ($m['is_next'] ? 'next' : 'upcoming'))}
 		<a href="{plink Race:default, meetingKey => $m['meeting_key']}"
 		   class="
-			flex justify-between items-baseline gap-3 py-[11px] px-2 border-b-2 border-gray-100 text-[15px] font-semibold transition-colors
+			grid grid-cols-[20px_56px_1fr_auto] items-baseline gap-x-3 py-3 px-2 border-b-2 border-gray-100 text-[15px] font-semibold transition-colors
 			{$state === 'done' ? 'text-black hover:bg-amber-50' : ''}
 			{$state === 'upcoming' ? 'text-gray-400 hover:bg-amber-50' : ''}
 			{$state === 'live' ? 'bg-f1-red text-white border-t-2 border-t-black border-b-black font-black text-base hover:bg-f1-red-dark' : ''}
 			{$state === 'next' ? 'bg-black text-white border-t-2 border-t-f1-red border-b-f1-red font-black text-base hover:bg-gray-900' : ''}
 		">
-			<span class="flex gap-2.5 items-baseline flex-1 min-w-0">
-				<span class="inline-block w-[18px] font-black text-base
-					{$state === 'done' ? 'text-f1-red' : ''}
-					{$state === 'live' ? 'text-white animate-pulse-live' : ''}
-					{$state === 'next' ? 'text-f1-red' : ''}
-				">{if $state === 'done'}✓{elseif $state === 'live'}●{elseif $state === 'next'}→{/if}</span>
-				<span class="inline-block w-[60px] text-[13px] font-bold
-					{$state === 'live' || $state === 'next' ? 'text-f1-red' : ''}
-					{$state === 'done' ? 'text-gray-500' : ''}
-					{$state === 'upcoming' ? 'text-gray-300' : ''}
-				">{$m['date_start']|date:'j. n.'}</span>
-				<span class="overflow-hidden text-ellipsis">
-					{$m['meeting_name'] ?? $m['meeting_official_name'] ?? '—'}
-					{if $m['winner']}<span class="inline-block font-bold text-f1-red uppercase text-xs tracking-[0.05em] ml-1">{$m['winner']}</span>{/if}
-				</span>
+			<span class="font-black text-base text-center
+				{$state === 'done' ? 'text-f1-red' : ''}
+				{$state === 'live' ? 'text-white animate-pulse-live' : ''}
+				{$state === 'next' ? 'text-f1-red' : ''}
+			">{if $state === 'done'}✓{elseif $state === 'live'}●{elseif $state === 'next'}→{/if}</span>
+
+			<span class="text-[13px] font-bold tabular-nums
+				{$state === 'live' ? 'text-white' : ''}
+				{$state === 'next' ? 'text-f1-red' : ''}
+				{$state === 'done' ? 'text-gray-500' : ''}
+				{$state === 'upcoming' ? 'text-gray-300' : ''}
+			">{$m['date_start']|date:'j. n.'}</span>
+
+			<span class="min-w-0 leading-tight">
+				<span class="block sm:inline">{$m['meeting_name'] ?? $m['meeting_official_name'] ?? '—'}</span>
+				{if $m['winner']}<span class="block sm:inline font-bold uppercase text-xs tracking-[0.05em] sm:ml-2 mt-0.5 sm:mt-0
+					{$state === 'live' ? 'text-white/90' : 'text-f1-red'}
+				">{$m['winner']}</span>{/if}
 			</span>
-			<span class="text-xs font-bold uppercase tracking-[0.05em] whitespace-nowrap
-				{$state === 'live' || $state === 'next' ? 'text-gray-400' : 'text-gray-500'}
+
+			<span class="text-[11px] sm:text-xs font-bold uppercase tracking-[0.05em] whitespace-nowrap
+				{$state === 'live' ? 'text-white/70' : ($state === 'next' ? 'text-gray-400' : 'text-gray-500')}
 			">{$m['circuit_short_name']}</span>
 		</a>
 	{/foreach}
