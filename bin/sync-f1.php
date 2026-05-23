@@ -179,7 +179,8 @@ if (!empty($newRaceWins) && $telegram->isConfigured()) {
     foreach ($newRaceWins as $event) {
         $m = $event['meeting'];
         $rows = $event['results'];
-        usort($rows, fn($a, $b) => ($a['position'] ?? 99) <=> ($b['position'] ?? 99));
+        $rows = array_filter($rows, fn($r) => isset($r['position']) && $r['position'] !== null);
+        usort($rows, fn($a, $b) => ((int) $a['position']) <=> ((int) $b['position']));
         $top3 = array_slice($rows, 0, 3);
 
         // Driver name lookup (from drivers table by number)
