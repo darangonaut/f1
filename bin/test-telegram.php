@@ -42,7 +42,7 @@ $results = $db->fetchAll(
     "SELECT sr.*, d.full_name, d.team_name
      FROM session_results sr
      LEFT JOIN drivers d ON d.driver_number = sr.driver_number AND d.year = ?
-     WHERE sr.session_key = ? ORDER BY sr.position LIMIT 3",
+     WHERE sr.session_key = ? AND sr.position IS NOT NULL ORDER BY sr.position LIMIT 3",
     $row->year, $row->session_key,
 );
 
