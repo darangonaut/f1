@@ -1,57 +1,75 @@
 {block content}
 
-<nav class="text-center mb-8 text-sm">
-	<span class="font-bold">Schedule</span>
-	&nbsp;&nbsp;&nbsp;
-	<a href="{plink Standings:default}">Standings</a>
-</nav>
+{define h2}
+	<h2 class="text-[13px] font-black uppercase tracking-[0.14em] text-black mt-8 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+		<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+		{$title}
+	</h2>
+{/define}
 
 {if $next}
-	{var $nextLoc = ($next['circuit_short_name'] ?? '') . ', ' . ($next['country_name'] ?? '')}
-	{var $nextHeader = $next['is_live'] ?? false ? 'Live This Weekend' : 'Next Event'}
-	<section class="mb-8 text-center">
-		<h2 class="text-sm font-bold mb-2 text-ink-soft">{$nextHeader}</h2>
-		<a href="{plink Race:default, meetingKey => $next['meeting_key']}" class="no-underline block">
-			<pre class="whitespace-pre">+{str_repeat('-', 52)}+
-| {sprintf('%-50s', mb_substr($next['meeting_name'] ?? $next['meeting_official_name'] ?? '—', 0, 50))} |
-| {sprintf('%-50s', mb_substr($nextLoc, 0, 50))} |
-| {sprintf('%-50s', $next['display_datetime'] ?? '')} |
-+{str_repeat('-', 46)} {sprintf('%-3s', $next['country_code'] ?? '')} +</pre>
-		</a>
-	</section>
+	{include h2, title => 'Najbližšie podujatie'}
+	<div class="bg-white border-2 border-black p-[18px] mb-2">
+		<div class="flex justify-between items-baseline gap-3">
+			<strong class="text-[15px]">{$next['meeting_official_name'] ?? $next['meeting_name'] ?? ''}</strong>
+			<span class="inline-block px-2 py-[3px] bg-black text-white text-[11px] font-bold tracking-[0.06em] uppercase">{$next['country_code']}</span>
+		</div>
+		<div class="flex justify-between items-baseline gap-3 mt-2">
+			<span class="text-[11px] font-bold uppercase tracking-[0.08em]">Okruh</span>
+			<span class="text-[15px] font-semibold">{$next['circuit_short_name']}, {$next['location']}</span>
+		</div>
+		<div class="flex justify-between items-baseline gap-3 mt-2">
+			<span class="text-[11px] font-bold uppercase tracking-[0.08em]">Dátum</span>
+			<span class="text-[15px] font-semibold">{$next['date_start']|date:'j. n. Y · H:i'}</span>
+		</div>
+	</div>
 {/if}
 
 {if $lastResults}
-	<section class="mb-8 text-center">
-		<h2 class="text-sm font-bold mb-2 text-ink-soft">Last Winner</h2>
-		<a href="{plink Race:default, meetingKey => $lastResults['meeting']['meeting_key']}" class="no-underline block">
-			<pre class="whitespace-pre">+{str_repeat('-', 52)}+
-| {sprintf('%-50s', mb_substr($lastResults['meeting']['meeting_name'] ?? '—', 0, 50))} |
-| {sprintf('%-50s', $lastResults['display_date'] ?? '')} |
-| {sprintf('%-50s', '')} |
-| 1. {sprintf('%-47s', mb_substr($lastResults['winner']['driver']['full_name'], 0, 47))} |
-| {sprintf('%-50s', '   ' . mb_substr($lastResults['winner']['driver']['team_name'] ?? '', 0, 47))} |
-+{str_repeat('-', 52)}+</pre>
-		</a>
-	</section>
+	{include h2, title => 'Posledný víťaz'}
+	<a href="{plink Race:default, meetingKey => $lastResults['meeting']['meeting_key']}" class="block border-0">
+		<div class="bg-amber-50 border-2 border-f1-red p-[18px] mb-4 hover:bg-amber-100 transition-colors">
+			<div class="flex justify-between items-baseline gap-3">
+				<strong class="text-lg text-black">{$lastResults['winner']['driver']['full_name']}</strong>
+				<span class="inline-block px-2 py-[3px] bg-f1-red text-white text-[11px] font-bold tracking-[0.06em] uppercase">{$lastResults['winner']['driver']['team_name']}</span>
+			</div>
+			<div class="flex justify-between items-baseline gap-3 mt-2 text-[11px] font-bold uppercase tracking-[0.08em]">
+				<span>{$lastResults['meeting']['meeting_name'] ?? '—'}</span>
+				<span>{$lastResults['meeting']['date_start']|date:'j. n. Y'}</span>
+			</div>
+		</div>
+	</a>
 {/if}
 
-<section class="text-center">
-	<h2 class="text-sm font-bold mb-3 text-ink-soft">Season {$year}</h2>
-
-	<div class="space-y-3">
+{include h2, title => 'Sezóna ' . $year}
+<div>
 	{foreach $meetings as $m}
-		{var $state = $m['is_past'] ? 'done' : ($m['is_live'] ? 'live' : 'upcoming')}
-		{var $icon = $state === 'done' ? '✓ ' : ($state === 'live' ? '● ' : '  ')}
-		<a href="{plink Race:default, meetingKey => $m['meeting_key']}" class="no-underline block group">
-			<pre class="whitespace-pre group-hover:text-accent {$state === 'upcoming' ? 'text-ink-soft' : ''}">+{str_repeat('-', 52)}+
-| {sprintf('%-50s', $icon . $m['display_date'])} |
-| {sprintf('%-50s', '   ' . mb_substr($m['meeting_name'] ?? '—', 0, 47))} |
-{if $m['winner']}| {sprintf('%-50s', '   Winner: ' . mb_substr($m['winner'], 0, 39))} |
-{/if}+{str_repeat('-', 39)} {sprintf('%-11s', mb_substr($m['circuit_short_name'] ?? '', 0, 11))} +</pre>
+		{var $state = $m['is_past'] ? 'done' : ($m['is_live'] ? 'live' : ($m['is_next'] ? 'next' : 'upcoming'))}
+		<a href="{plink Race:default, meetingKey => $m['meeting_key']}"
+		   class="
+			grid grid-cols-[20px_56px_1fr_auto] items-baseline gap-x-3 py-3 px-2 border-b-2 border-gray-100 text-[15px] font-semibold transition-colors hover:bg-amber-50
+			{$state === 'upcoming' ? 'text-gray-400' : 'text-black'}
+		">
+			<span class="font-black text-base text-center
+				{$state === 'done' ? 'text-f1-red' : ''}
+				{$state === 'live' ? 'text-f1-red animate-pulse-live' : ''}
+				{$state === 'next' ? 'text-f1-red' : ''}
+			">{if $state === 'done'}✓{elseif $state === 'live'}●{elseif $state === 'next'}→{/if}</span>
+
+			<span class="text-[13px] font-bold tabular-nums
+				{$state === 'done' ? 'text-gray-500' : ''}
+				{$state === 'upcoming' ? 'text-gray-300' : ''}
+				{$state === 'live' || $state === 'next' ? 'text-f1-red' : ''}
+			">{$m['date_start']|date:'j. n.'}</span>
+
+			<span class="min-w-0 leading-tight">
+				<span class="block sm:inline">{$m['meeting_name'] ?? $m['meeting_official_name'] ?? '—'}</span>
+				{if $m['winner']}<span class="block sm:inline font-bold uppercase text-xs tracking-[0.05em] sm:ml-2 mt-0.5 sm:mt-0 text-f1-red">{$m['winner']}</span>{/if}
+			</span>
+
+			<span class="text-[11px] sm:text-xs font-bold uppercase tracking-[0.05em] whitespace-nowrap text-gray-500">{$m['circuit_short_name']}</span>
 		</a>
 	{/foreach}
-	</div>
-</section>
+</div>
 
 {/block}

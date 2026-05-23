@@ -3,37 +3,17 @@
 @source "../app/Presentation/**/*.latte";
 
 @theme {
-  --color-paper: #f5e6d3;
-  --color-paper-soft: #ede0d0;
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #595959;
-  --color-accent: #cc0000;
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+  --color-f1-red: #e10600;
+  --color-f1-red-dark: #b00500;
+  --font-display: "Titillium Web", "Helvetica Neue", Arial, sans-serif;
 }
 
 @layer base {
-  html, body {
-    font-family: var(--font-mono);
-    background: var(--color-paper);
-    color: var(--color-ink);
-    font-size: 14px;
-    line-height: 1.5;
+  body {
+    font-family: var(--font-display);
+    background: #fff;
+    color: #000;
     -webkit-font-smoothing: antialiased;
-  }
-  a {
-    color: var(--color-ink);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    text-decoration-thickness: 1px;
-  }
-  a:hover { color: var(--color-accent); }
-  pre {
-    font-family: inherit;
-    font-size: clamp(10px, 2.5vw, 14px);
-    line-height: 1.4;
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
   }
 }
 

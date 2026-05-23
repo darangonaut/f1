@@ -46,7 +46,6 @@ final class HomePresenter extends \App\Presentation\BasePresenter
             }
         }
 
-        $shortDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
         foreach ($meetings as &$m) {
             $start = new \DateTimeImmutable($m['date_start']);
             $assumedEnd = $start->modify('+3 days');
@@ -54,7 +53,6 @@ final class HomePresenter extends \App\Presentation\BasePresenter
             $m['is_live'] = $start <= $now && $assumedEnd >= $now;
             $m['is_next'] = !$anyLive && !$m['is_past'] && !$m['is_live']
                 && $nextUpcoming !== null && $m['meeting_key'] === $nextUpcoming['meeting_key'];
-            $m['display_date'] = $shortDays[(int) $start->format('N') - 1] . ' ' . $start->format('j. n.');
             $m['winner'] = null;
             if ($m['is_past']) {
                 $w = $this->repo->getMeetingWinner((int) $m['meeting_key'], $year);
@@ -75,17 +73,6 @@ final class HomePresenter extends \App\Presentation\BasePresenter
                 $lastResults = ['meeting' => $m, 'winner' => $w];
                 break;
             }
-        }
-
-        if ($headerNext !== null) {
-            $startDt = new \DateTimeImmutable($headerNext['date_start']);
-            $headerNext['display_datetime'] = $shortDays[(int) $startDt->format('N') - 1] . ', ' . $startDt->format('j. n. Y · H:i');
-            $headerNext['is_live'] = $startDt <= $now && $startDt->modify('+3 days') >= $now;
-            $next = $headerNext;
-        }
-        if ($lastResults !== null) {
-            $wDt = new \DateTimeImmutable($lastResults['meeting']['date_start']);
-            $lastResults['display_date'] = $shortDays[(int) $wDt->format('N') - 1] . ', ' . $wDt->format('j. n. Y');
         }
 
         $this->template->year = $year;
