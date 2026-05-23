@@ -39,3 +39,4 @@ di:
 
 services:
 	- App\Services\OpenF1Client
+	- App\Repositories\F1Repository
