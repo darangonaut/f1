@@ -8,13 +8,13 @@
 
 {var $labels = ['Practice' => 'Practice', 'Qualifying' => 'Qualifying', 'Race' => 'Race']}
 
-<section class="mb-8">
+<section class="mb-8 text-center">
 	<h2 class="text-sm font-bold mb-2 text-ink-soft">Race Weekend</h2>
-	<pre class="whitespace-pre">+{str_repeat('-', 44)}+
-| {sprintf('%-42s', mb_substr($meeting['meeting_official_name'] ?? $meeting['meeting_name'] ?? '—', 0, 42))} |
-| {sprintf('%-42s', mb_substr(($meeting['circuit_short_name'] ?? '') . ', ' . ($meeting['country_name'] ?? ''), 0, 42))} |
-| {sprintf('%-42s', $meeting['display_date'])} |
-+{str_repeat('-', 38)} {sprintf('%-3s', $meeting['country_code'] ?? '')} +</pre>
+	<pre class="whitespace-pre">+{str_repeat('-', 52)}+
+| {sprintf('%-50s', mb_substr($meeting['meeting_official_name'] ?? $meeting['meeting_name'] ?? '—', 0, 50))} |
+| {sprintf('%-50s', mb_substr(($meeting['circuit_short_name'] ?? '') . ', ' . ($meeting['country_name'] ?? ''), 0, 50))} |
+| {sprintf('%-50s', $meeting['display_date'])} |
++{str_repeat('-', 46)} {sprintf('%-3s', $meeting['country_code'] ?? '')} +</pre>
 </section>
 
 {foreach $sessions as $s}
@@ -22,8 +22,8 @@
 	{var $sessLabel = $labels[$sess['session_type']] ?? $sess['session_type']}
 	{var $sessTitle = $sessLabel . ' · ' . $sess['session_name']}
 
-	<section class="mb-6">
-		<h3 class="text-sm font-bold mb-2 flex items-baseline justify-between gap-2">
+	<section class="mb-6 text-center">
+		<h3 class="text-sm font-bold mb-2 flex items-baseline justify-center gap-3">
 			<span>{$sessTitle}</span>
 			<span class="text-xs text-ink-soft font-normal whitespace-nowrap">{$sess['display_datetime']}</span>
 		</h3>
