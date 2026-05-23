@@ -37,12 +37,22 @@ final class HomePresenter extends \App\Presentation\BasePresenter
         }
         $next = $headerNext;
 
+        $anyLive = false;
+        foreach ($meetings as $m) {
+            $s = new \DateTimeImmutable($m['date_start']);
+            if ($s <= $now && $s->modify('+3 days') >= $now) {
+                $anyLive = true;
+                break;
+            }
+        }
+
         foreach ($meetings as &$m) {
             $start = new \DateTimeImmutable($m['date_start']);
             $assumedEnd = $start->modify('+3 days');
             $m['is_past'] = $assumedEnd < $now;
             $m['is_live'] = $start <= $now && $assumedEnd >= $now;
-            $m['is_next'] = !$m['is_past'] && !$m['is_live'] && $nextUpcoming !== null && $m['meeting_key'] === $nextUpcoming['meeting_key'];
+            $m['is_next'] = !$anyLive && !$m['is_past'] && !$m['is_live']
+                && $nextUpcoming !== null && $m['meeting_key'] === $nextUpcoming['meeting_key'];
             $m['winner'] = null;
             if ($m['is_past']) {
                 $w = $this->repo->getMeetingWinner((int) $m['meeting_key'], $year);
