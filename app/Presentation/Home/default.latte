@@ -9,34 +9,34 @@
 {if $next}
 	{var $nextLoc = ($next['circuit_short_name'] ?? '') . ', ' . ($next['country_name'] ?? '')}
 	{var $nextHeader = $next['is_live'] ?? false ? 'Live This Weekend' : 'Next Event'}
-	<section class="mb-8">
+	<section class="mb-8 text-center">
 		<h2 class="text-sm font-bold mb-2 text-ink-soft">{$nextHeader}</h2>
 		<a href="{plink Race:default, meetingKey => $next['meeting_key']}" class="no-underline block">
-			<pre class="whitespace-pre">+{str_repeat('-', 44)}+
-| {sprintf('%-42s', mb_substr($next['meeting_name'] ?? $next['meeting_official_name'] ?? '—', 0, 42))} |
-| {sprintf('%-42s', mb_substr($nextLoc, 0, 42))} |
-| {sprintf('%-42s', $next['display_datetime'] ?? '')} |
-+{str_repeat('-', 38)} {sprintf('%-3s', $next['country_code'] ?? '')} +</pre>
+			<pre class="whitespace-pre">+{str_repeat('-', 52)}+
+| {sprintf('%-50s', mb_substr($next['meeting_name'] ?? $next['meeting_official_name'] ?? '—', 0, 50))} |
+| {sprintf('%-50s', mb_substr($nextLoc, 0, 50))} |
+| {sprintf('%-50s', $next['display_datetime'] ?? '')} |
++{str_repeat('-', 46)} {sprintf('%-3s', $next['country_code'] ?? '')} +</pre>
 		</a>
 	</section>
 {/if}
 
 {if $lastResults}
-	<section class="mb-8">
+	<section class="mb-8 text-center">
 		<h2 class="text-sm font-bold mb-2 text-ink-soft">Last Winner</h2>
 		<a href="{plink Race:default, meetingKey => $lastResults['meeting']['meeting_key']}" class="no-underline block">
-			<pre class="whitespace-pre">+{str_repeat('-', 44)}+
-| {sprintf('%-42s', mb_substr($lastResults['meeting']['meeting_name'] ?? '—', 0, 42))} |
-| {sprintf('%-42s', $lastResults['display_date'] ?? '')} |
-| {sprintf('%-42s', '')} |
-| 1. {sprintf('%-39s', mb_substr($lastResults['winner']['driver']['full_name'], 0, 39))} |
-| {sprintf('%-42s', '   ' . mb_substr($lastResults['winner']['driver']['team_name'] ?? '', 0, 39))} |
-+{str_repeat('-', 44)}+</pre>
+			<pre class="whitespace-pre">+{str_repeat('-', 52)}+
+| {sprintf('%-50s', mb_substr($lastResults['meeting']['meeting_name'] ?? '—', 0, 50))} |
+| {sprintf('%-50s', $lastResults['display_date'] ?? '')} |
+| {sprintf('%-50s', '')} |
+| 1. {sprintf('%-47s', mb_substr($lastResults['winner']['driver']['full_name'], 0, 47))} |
+| {sprintf('%-50s', '   ' . mb_substr($lastResults['winner']['driver']['team_name'] ?? '', 0, 47))} |
++{str_repeat('-', 52)}+</pre>
 		</a>
 	</section>
 {/if}
 
-<section>
+<section class="text-center">
 	<h2 class="text-sm font-bold mb-3 text-ink-soft">Season {$year}</h2>
 
 	<div class="space-y-3">
@@ -44,11 +44,11 @@
 		{var $state = $m['is_past'] ? 'done' : ($m['is_live'] ? 'live' : 'upcoming')}
 		{var $icon = $state === 'done' ? '✓ ' : ($state === 'live' ? '● ' : '  ')}
 		<a href="{plink Race:default, meetingKey => $m['meeting_key']}" class="no-underline block group">
-			<pre class="whitespace-pre group-hover:text-accent {$state === 'upcoming' ? 'text-ink-soft' : ''}">+{str_repeat('-', 44)}+
-| {sprintf('%-42s', $icon . $m['display_date'])} |
-| {sprintf('%-42s', '   ' . mb_substr($m['meeting_name'] ?? '—', 0, 39))} |
-{if $m['winner']}| {sprintf('%-42s', '   Winner: ' . mb_substr($m['winner'], 0, 31))} |
-{/if}+{str_repeat('-', 34)} {sprintf('%-8s', mb_substr($m['circuit_short_name'] ?? '', 0, 8))} +</pre>
+			<pre class="whitespace-pre group-hover:text-accent {$state === 'upcoming' ? 'text-ink-soft' : ''}">+{str_repeat('-', 52)}+
+| {sprintf('%-50s', $icon . $m['display_date'])} |
+| {sprintf('%-50s', '   ' . mb_substr($m['meeting_name'] ?? '—', 0, 47))} |
+{if $m['winner']}| {sprintf('%-50s', '   Winner: ' . mb_substr($m['winner'], 0, 39))} |
+{/if}+{str_repeat('-', 39)} {sprintf('%-11s', mb_substr($m['circuit_short_name'] ?? '', 0, 11))} +</pre>
 		</a>
 	{/foreach}
 	</div>
