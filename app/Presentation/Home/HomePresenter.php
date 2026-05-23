@@ -20,20 +20,29 @@ final class HomePresenter extends \App\Presentation\BasePresenter
         $meetings = $this->repo->getMeetings($year);
 
         $now = new \DateTimeImmutable();
-        $next = null;
+        $headerNext = null;          // for "Najbližšie podujatie": live OR next upcoming
+        $nextUpcoming = null;        // for season list arrow: only strictly upcoming
         foreach ($meetings as $m) {
             $start = new \DateTimeImmutable($m['date_start']);
-            if ($start > $now) {
-                $next = $next ?? $m;
+            $assumedEnd = $start->modify('+3 days');
+            if ($assumedEnd > $now && $headerNext === null) {
+                $headerNext = $m;
+            }
+            if ($start > $now && $nextUpcoming === null) {
+                $nextUpcoming = $m;
+            }
+            if ($headerNext !== null && $nextUpcoming !== null) {
+                break;
             }
         }
+        $next = $headerNext;
 
         foreach ($meetings as &$m) {
             $start = new \DateTimeImmutable($m['date_start']);
             $assumedEnd = $start->modify('+3 days');
             $m['is_past'] = $assumedEnd < $now;
             $m['is_live'] = $start <= $now && $assumedEnd >= $now;
-            $m['is_next'] = !$m['is_past'] && !$m['is_live'] && $next !== null && $m['meeting_key'] === $next['meeting_key'];
+            $m['is_next'] = !$m['is_past'] && !$m['is_live'] && $nextUpcoming !== null && $m['meeting_key'] === $nextUpcoming['meeting_key'];
             $m['winner'] = null;
             if ($m['is_past']) {
                 $w = $this->repo->getMeetingWinner((int) $m['meeting_key'], $year);
