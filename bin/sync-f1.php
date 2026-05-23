@@ -9,11 +9,14 @@ date_default_timezone_set('Europe/Bratislava');
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$container = (new \Nette\Bootstrap\Configurator())
+$configurator = (new \Nette\Bootstrap\Configurator())
     ->setDebugMode(false)
-    ->setTempDirectory(__DIR__ . '/../temp')
-    ->addConfig(__DIR__ . '/../config/common.neon')
-    ->createContainer();
+    ->setTempDirectory(__DIR__ . '/../temp');
+$configurator->addConfig(__DIR__ . '/../config/common.neon');
+if (is_file(__DIR__ . '/../config/local.neon')) {
+    $configurator->addConfig(__DIR__ . '/../config/local.neon');
+}
+$container = $configurator->createContainer();
 
 /** @var \Nette\Database\Explorer $db */
 $db = $container->getByType(\Nette\Database\Explorer::class);
