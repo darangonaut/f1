@@ -24,6 +24,11 @@ $db = $container->getByType(\Nette\Database\Explorer::class);
 /** @var \App\Services\OpenF1Client $api */
 $api = $container->getByType(\App\Services\OpenF1Client::class);
 
+/** @var \App\Services\TelegramNotifier $telegram */
+$telegram = $container->getByType(\App\Services\TelegramNotifier::class);
+
+$newRaceWins = [];   // collected so we can fire one notif per Race
+
 $schemaSql = file_get_contents(__DIR__ . '/../db/schema.sql');
 foreach (preg_split('/;\s*$/m', $schemaSql) as $stmt) {
     $stmt = trim($stmt);
@@ -113,6 +118,11 @@ foreach ($meetings as $m) {
             ]);
         }
         echo "  session $sk ({$s['session_name']}): " . count($results) . " results\n";
+
+        // If this is the main Race and we just imported results for the first time, queue a notification
+        if (($s['session_type'] ?? '') === 'Race' && ($s['session_name'] ?? '') === 'Race') {
+            $newRaceWins[] = ['meeting' => $m, 'session' => $s, 'results' => $results];
+        }
     }
 }
 
@@ -162,6 +172,45 @@ $counts = [
     'drivers' => $db->fetchField('SELECT COUNT(*) FROM drivers WHERE year = ?', $year),
 ];
 echo "[sync] done — " . json_encode($counts) . "\n";
+
+
+// 4) Telegram notifications for newly imported Race results
+if (!empty($newRaceWins) && $telegram->isConfigured()) {
+    foreach ($newRaceWins as $event) {
+        $m = $event['meeting'];
+        $rows = $event['results'];
+        usort($rows, fn($a, $b) => ($a['position'] ?? 99) <=> ($b['position'] ?? 99));
+        $top3 = array_slice($rows, 0, 3);
+
+        // Driver name lookup (from drivers table by number)
+        $drivers = [];
+        foreach ($db->fetchAll('SELECT driver_number, full_name, team_name FROM drivers WHERE year = ?', (int) ($m['year'] ?? $year)) as $d) {
+            $drivers[(int) $d->driver_number] = (array) $d;
+        }
+
+        $title = $m['meeting_name'] ?? $m['meeting_official_name'] ?? 'Race';
+        $esc = fn($s) => \App\Services\TelegramNotifier::escape((string) $s);
+        $podiumLines = [];
+        $medals = ['🥇', '🥈', '🥉'];
+        foreach ($top3 as $i => $r) {
+            $dn = (int) $r['driver_number'];
+            $name = $drivers[$dn]['full_name'] ?? "#$dn";
+            $team = $drivers[$dn]['team_name'] ?? '';
+            $pts = isset($r['points']) ? ' \\(' . (int) $r['points'] . ' pts\\)' : '';
+            $podiumLines[] = ($medals[$i] ?? ($i + 1) . '.') . ' ' . $esc($name) . ($team ? ' — ' . $esc($team) : '') . $pts;
+        }
+        $url = 'https://f1\\.markuska\\.cz/race/' . (int) $m['meeting_key'];
+
+        $text = "🏁 *" . $esc($title) . "*\n\n"
+            . implode("\n", $podiumLines)
+            . "\n\n[Full results]($url)";
+
+        $ok = $telegram->send($text);
+        echo "[sync] telegram: $title — " . ($ok ? 'sent' : 'FAILED') . "\n";
+    }
+} elseif (!empty($newRaceWins)) {
+    echo "[sync] telegram: skipped (not configured)\n";
+}
 
 
 function upsert(\Nette\Database\Explorer $db, string $table, string $pkColumn, array $row): void
