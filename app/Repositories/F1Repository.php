@@ -106,6 +106,57 @@ final class F1Repository
         return $arr;
     }
 
+    /** Driver standings — aggregated points across all Race + Sprint sessions of a year. */
+    public function getDriverStandings(int $year): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT
+                sr.driver_number,
+                d.full_name,
+                d.team_name,
+                d.team_colour,
+                d.country_code,
+                SUM(sr.points) AS total_points,
+                SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
+                SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums
+             FROM session_results sr
+             JOIN sessions s ON s.session_key = sr.session_key
+             JOIN meetings m ON m.meeting_key = s.meeting_key
+             LEFT JOIN drivers d ON d.driver_number = sr.driver_number AND d.year = ?
+             WHERE m.year = ? AND s.session_type = ?
+             GROUP BY sr.driver_number, d.full_name, d.team_name, d.team_colour, d.country_code
+             ORDER BY total_points DESC, wins DESC',
+            $year,
+            $year,
+            'Race',
+        );
+        return array_map(fn($r) => (array) $r, $rows);
+    }
+
+    /** Constructor standings — sum of all drivers' points per team. */
+    public function getConstructorStandings(int $year): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT
+                d.team_name,
+                d.team_colour,
+                SUM(sr.points) AS total_points,
+                SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
+                SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums
+             FROM session_results sr
+             JOIN sessions s ON s.session_key = sr.session_key
+             JOIN meetings m ON m.meeting_key = s.meeting_key
+             JOIN drivers d ON d.driver_number = sr.driver_number AND d.year = ?
+             WHERE m.year = ? AND s.session_type = ?
+             GROUP BY d.team_name, d.team_colour
+             ORDER BY total_points DESC, wins DESC',
+            $year,
+            $year,
+            'Race',
+        );
+        return array_map(fn($r) => (array) $r, $rows);
+    }
+
     /** Timestamp of the most recent fetch (across all tables). */
     public function getLastSyncAt(): ?\DateTimeImmutable
     {

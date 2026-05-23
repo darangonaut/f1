@@ -14,6 +14,7 @@ final class RouterFactory
 	{
 		$router = new RouteList;
 		$router->addRoute('race/<meetingKey [0-9]+>', 'Race:default');
+		$router->addRoute('standings', 'Standings:default');
 		$router->addRoute('<presenter>/<action>[/<id>]', 'Home:default');
 		return $router;
 	}
