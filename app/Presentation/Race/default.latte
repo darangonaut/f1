@@ -10,11 +10,11 @@
 
 <section class="mb-8">
 	<h2 class="text-sm font-bold mb-2 text-ink-soft">Race Weekend</h2>
-	<pre class="text-[12px] sm:text-sm leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 56)}+
-| {sprintf('%-54s', $meeting['meeting_official_name'] ?? $meeting['meeting_name'] ?? '—')} |
-| {sprintf('%-54s', ($meeting['circuit_short_name'] ?? '') . ', ' . ($meeting['country_name'] ?? ''))} |
-| {sprintf('%-54s', $meeting['display_date'])} |
-+{str_repeat('-', 50)} {sprintf('%-3s', $meeting['country_code'] ?? '')} +</pre>
+	<pre class="whitespace-pre">+{str_repeat('-', 44)}+
+| {sprintf('%-42s', mb_substr($meeting['meeting_official_name'] ?? $meeting['meeting_name'] ?? '—', 0, 42))} |
+| {sprintf('%-42s', mb_substr(($meeting['circuit_short_name'] ?? '') . ', ' . ($meeting['country_name'] ?? ''), 0, 42))} |
+| {sprintf('%-42s', $meeting['display_date'])} |
++{str_repeat('-', 38)} {sprintf('%-3s', $meeting['country_code'] ?? '')} +</pre>
 </section>
 
 {foreach $sessions as $s}
@@ -23,26 +23,26 @@
 	{var $sessTitle = $sessLabel . ' · ' . $sess['session_name']}
 
 	<section class="mb-6">
-		<h3 class="text-sm font-bold mb-2 flex items-baseline justify-between">
+		<h3 class="text-sm font-bold mb-2 flex items-baseline justify-between gap-2">
 			<span>{$sessTitle}</span>
-			<span class="text-xs text-ink-soft font-normal">{$sess['display_datetime']}</span>
+			<span class="text-xs text-ink-soft font-normal whitespace-nowrap">{$sess['display_datetime']}</span>
 		</h3>
 
 		{if $s['is_future']}
-			<pre class="text-[12px] sm:text-sm text-ink-soft leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 56)}+
-| {sprintf('%-54s', 'Not yet held')} |
-+{str_repeat('-', 56)}+</pre>
+			<pre class="text-ink-soft whitespace-pre">+{str_repeat('-', 44)}+
+| {sprintf('%-42s', 'Not yet held')} |
++{str_repeat('-', 44)}+</pre>
 		{elseif empty($s['positions'])}
-			<pre class="text-[12px] sm:text-sm text-ink-soft leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 56)}+
-| {sprintf('%-54s', 'No results data')} |
-+{str_repeat('-', 56)}+</pre>
+			<pre class="text-ink-soft whitespace-pre">+{str_repeat('-', 44)}+
+| {sprintf('%-42s', 'No results data')} |
++{str_repeat('-', 44)}+</pre>
 		{else}
-			{var $isRace = in_array($sess['session_type'], ['Race'], true)}
-			<pre class="text-[12px] sm:text-sm leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 4)}+{str_repeat('-', 28)}+{str_repeat('-', 20)}{$isRace ? '+----' : ''}+
-|  # | Driver                     | Team              {$isRace ? '| pts' : ''} |
-+{str_repeat('-', 4)}+{str_repeat('-', 28)}+{str_repeat('-', 20)}{$isRace ? '+----' : ''}+
-{foreach $s['positions'] as $row}{var $pos = $row['position']}| {sprintf('%2s', $pos ?? '—')} | {sprintf('%-26s', $row['driver']['full_name'] ?? '#' . $row['driver_number'])} | {sprintf('%-17s', mb_substr($row['driver']['team_name'] ?? '', 0, 17))} {$isRace ? '| ' . sprintf('%-3s', isset($row['points']) && $row['points'] > 0 ? (int) $row['points'] : '') : ''} |
-{/foreach}+{str_repeat('-', 4)}+{str_repeat('-', 28)}+{str_repeat('-', 20)}{$isRace ? '+----' : ''}+</pre>
+			{var $isRace = $sess['session_type'] === 'Race'}
+			<pre class="whitespace-pre">+----+--------------------+---------------+{$isRace ? '------+' : '-+'}
+|  # | Driver             | Team          {$isRace ? '|  pts |' : '|'}
++----+--------------------+---------------+{$isRace ? '------+' : '-+'}
+{foreach $s['positions'] as $row}{var $pos = $row['position']}{var $name = $row['driver']['full_name'] ?? '#' . $row['driver_number']}{var $team = $row['driver']['team_name'] ?? ''}| {sprintf('%2s', $pos ?? '—')} | {sprintf('%-18s', mb_substr($name, 0, 18))} | {sprintf('%-13s', mb_substr($team, 0, 13))} {$isRace ? '| ' . sprintf('%4s', isset($row['points']) && $row['points'] > 0 ? (int) $row['points'] : '') . ' |' : '|'}
+{/foreach}+----+--------------------+---------------+{$isRace ? '------+' : '-+'}</pre>
 		{/if}
 	</section>
 {/foreach}
