@@ -26,11 +26,11 @@ final class F1Repository
         return $y !== false && $y !== null ? (int) $y : null;
     }
 
-    /** Sessions of a meeting, ordered by date_start ASC. */
+    /** Sessions of a meeting, ordered by date_start DESC (Race first). */
     public function getSessions(int $meetingKey): array
     {
         $rows = $this->db->fetchAll(
-            'SELECT * FROM sessions WHERE meeting_key = ? ORDER BY date_start ASC',
+            'SELECT * FROM sessions WHERE meeting_key = ? ORDER BY date_start DESC',
             $meetingKey,
         );
         return array_map(fn($r) => (array) $r, $rows);
