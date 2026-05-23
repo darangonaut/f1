@@ -1,43 +1,79 @@
 {block content}
 
-<nav class="text-center mb-8 text-sm">
-	<a href="{plink Home:default}">Schedule</a>
-	&nbsp;&nbsp;&nbsp;
-	<span class="font-bold">Standings</span>
-</nav>
+<a href="{plink Home:default}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Sezóna</a>
 
-<section class="mb-8 text-center">
-	<h2 class="text-sm font-bold mb-2 text-ink-soft">Drivers · {$year}</h2>
+<h2 class="text-[13px] font-black uppercase tracking-[0.14em] text-black mt-0 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+	Poradie jazdcov · {$year}
+</h2>
 
-	{if empty($drivers)}
-		<pre class="text-ink-soft whitespace-pre">+{str_repeat('-', 44)}+
-| {sprintf('%-42s', 'No data yet')} |
-+{str_repeat('-', 44)}+</pre>
-	{else}
-		<pre class="whitespace-pre">+----+----------------+--------------+----+----+------+
-|  # | Driver         | Team         |  W |  P |  pts |
-+----+----------------+--------------+----+----+------+
-{foreach $drivers as $i => $d}| {sprintf('%2d', $i + 1)} | {sprintf('%-14s', mb_substr($d['full_name'] ?? '#' . $d['driver_number'], 0, 14))} | {sprintf('%-12s', mb_substr($d['team_name'] ?? '', 0, 12))} | {sprintf('%2s', $d['wins'])} | {sprintf('%2s', $d['podiums'])} | {sprintf('%4s', (int) $d['total_points'])} |
-{/foreach}+----+----------------+--------------+----+----+------+</pre>
-	{/if}
-</section>
+{if empty($drivers)}
+	<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide">
+		Žiadne dáta. Po prvom skončenom preteku sa tu objavia.
+	</div>
+{else}
+	<table class="w-full border-collapse tabular-nums">
+		<thead>
+			<tr class="bg-black text-white">
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[42px]">#</th>
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Jazdec</th>
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Tím</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[50px]">V</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[50px]">P</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[70px]">Body</th>
+			</tr>
+		</thead>
+		<tbody>
+		{foreach $drivers as $i => $d}
+			{var $rank = $i + 1}
+			<tr class="border-b-2 border-gray-100 hover:bg-amber-50 {$rank === 1 ? 'bg-red-50 font-bold' : ''}">
+				<td class="px-2 py-2.5 font-black text-lg w-[42px] {$rank === 1 ? 'bg-black text-f1-red' : ($rank === 2 ? 'bg-gray-500 text-white' : ($rank === 3 ? 'bg-amber-800 text-white' : 'text-black'))}">{$rank}</td>
+				<td class="px-2 py-2.5 text-[15px] font-semibold">{$d['full_name'] ?? '#' . $d['driver_number']}</td>
+				<td class="px-2 py-2.5 text-[14px] font-semibold text-gray-500">{$d['team_name']}</td>
+				<td class="px-2 py-2.5 text-right text-[14px] font-semibold {$d['wins'] > 0 ? 'text-f1-red' : 'text-gray-300'}">{$d['wins']}</td>
+				<td class="px-2 py-2.5 text-right text-[14px] font-semibold {$d['podiums'] > 0 ? 'text-black' : 'text-gray-300'}">{$d['podiums']}</td>
+				<td class="px-2 py-2.5 text-right text-[18px] font-black">{$d['total_points']|number:0,'',''}</td>
+			</tr>
+		{/foreach}
+		</tbody>
+	</table>
+{/if}
 
-<section class="mb-8 text-center">
-	<h2 class="text-sm font-bold mb-2 text-ink-soft">Constructors · {$year}</h2>
+<h2 class="text-[13px] font-black uppercase tracking-[0.14em] text-black mt-8 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+	Poradie konštruktérov · {$year}
+</h2>
 
-	{if empty($constructors)}
-		<pre class="text-ink-soft whitespace-pre">+{str_repeat('-', 44)}+
-| {sprintf('%-42s', 'No data yet')} |
-+{str_repeat('-', 44)}+</pre>
-	{else}
-		<pre class="whitespace-pre">+----+----------------------+----+----+------+
-|  # | Team                 |  W |  P |  pts |
-+----+----------------------+----+----+------+
-{foreach $constructors as $i => $c}| {sprintf('%2d', $i + 1)} | {sprintf('%-20s', mb_substr($c['team_name'] ?? '', 0, 20))} | {sprintf('%2s', $c['wins'])} | {sprintf('%2s', $c['podiums'])} | {sprintf('%4s', (int) $c['total_points'])} |
-{/foreach}+----+----------------------+----+----+------+</pre>
-	{/if}
-</section>
+{if empty($constructors)}
+	<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide">
+		Žiadne dáta.
+	</div>
+{else}
+	<table class="w-full border-collapse tabular-nums">
+		<thead>
+			<tr class="bg-black text-white">
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[42px]">#</th>
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Tím</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[50px]">V</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[50px]">P</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[70px]">Body</th>
+			</tr>
+		</thead>
+		<tbody>
+		{foreach $constructors as $i => $c}
+			{var $rank = $i + 1}
+			<tr class="border-b-2 border-gray-100 hover:bg-amber-50 {$rank === 1 ? 'bg-red-50 font-bold' : ''}">
+				<td class="px-2 py-2.5 font-black text-lg w-[42px] {$rank === 1 ? 'bg-black text-f1-red' : ($rank === 2 ? 'bg-gray-500 text-white' : ($rank === 3 ? 'bg-amber-800 text-white' : 'text-black'))}">{$rank}</td>
+				<td class="px-2 py-2.5 text-[15px] font-semibold">{$c['team_name']}</td>
+				<td class="px-2 py-2.5 text-right text-[14px] font-semibold {$c['wins'] > 0 ? 'text-f1-red' : 'text-gray-300'}">{$c['wins']}</td>
+				<td class="px-2 py-2.5 text-right text-[14px] font-semibold {$c['podiums'] > 0 ? 'text-black' : 'text-gray-300'}">{$c['podiums']}</td>
+				<td class="px-2 py-2.5 text-right text-[18px] font-black">{$c['total_points']|number:0,'',''}</td>
+			</tr>
+		{/foreach}
+		</tbody>
+	</table>
+{/if}
 
-<p class="text-xs text-ink-soft">W = wins · P = podiums (top 3)</p>
+<p class="text-[11px] text-gray-400 mt-4 uppercase tracking-wider font-bold">V = víťazstvá · P = pódia (top 3)</p>
 
 {/block}

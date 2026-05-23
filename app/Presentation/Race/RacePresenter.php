@@ -24,21 +24,13 @@ final class RacePresenter extends \App\Presentation\BasePresenter
 
         $sessions = $this->repo->getSessions($meetingKey);
         $now = new \DateTimeImmutable();
-        $shortDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-
-        $meeting['display_date'] = (new \DateTimeImmutable($meeting['date_start']))->format('j. n. Y');
-
         $rendered = [];
         foreach ($sessions as $s) {
             $endDate = $s['date_end'] ? new \DateTimeImmutable($s['date_end']) : null;
-            $startDate = $s['date_start'] ? new \DateTimeImmutable($s['date_start']) : null;
             $isFuture = $endDate === null || $endDate > $now;
             $positions = !$isFuture
                 ? $this->repo->getSessionResults((int) $s['session_key'], (int) $meeting['year'])
                 : [];
-            $s['display_datetime'] = $startDate
-                ? $shortDays[(int) $startDate->format('N') - 1] . ' ' . $startDate->format('j. n. · H:i')
-                : '';
             $rendered[] = [
                 'session' => $s,
                 'positions' => $positions,
