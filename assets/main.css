@@ -27,7 +27,11 @@
     text-decoration-thickness: 1px;
   }
   a:hover { color: var(--color-accent); }
-  pre { font-family: inherit }
+  pre {
+    font-family: inherit;
+    font-size: clamp(10px, 2.6vw, 14px);
+    line-height: 1.4;
+  }
 }
 
 @layer utilities {

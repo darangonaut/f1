@@ -10,15 +10,15 @@
 	<h2 class="text-sm font-bold mb-2 text-ink-soft">Drivers · {$year}</h2>
 
 	{if empty($drivers)}
-		<pre class="text-[12px] sm:text-sm text-ink-soft leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 56)}+
-| {sprintf('%-54s', 'No data yet')} |
-+{str_repeat('-', 56)}+</pre>
+		<pre class="text-ink-soft whitespace-pre">+{str_repeat('-', 44)}+
+| {sprintf('%-42s', 'No data yet')} |
++{str_repeat('-', 44)}+</pre>
 	{else}
-		<pre class="text-[12px] sm:text-sm leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 4)}+{str_repeat('-', 26)}+{str_repeat('-', 18)}+{str_repeat('-', 4)}+{str_repeat('-', 4)}+{str_repeat('-', 6)}+
-|  # | Driver                   | Team             |  W |  P |  pts |
-+{str_repeat('-', 4)}+{str_repeat('-', 26)}+{str_repeat('-', 18)}+{str_repeat('-', 4)}+{str_repeat('-', 4)}+{str_repeat('-', 6)}+
-{foreach $drivers as $i => $d}| {sprintf('%2d', $i + 1)} | {sprintf('%-24s', $d['full_name'] ?? '#' . $d['driver_number'])} | {sprintf('%-16s', mb_substr($d['team_name'] ?? '', 0, 16))} | {sprintf('%2s', $d['wins'])} | {sprintf('%2s', $d['podiums'])} | {sprintf('%4s', (int) $d['total_points'])} |
-{/foreach}+{str_repeat('-', 4)}+{str_repeat('-', 26)}+{str_repeat('-', 18)}+{str_repeat('-', 4)}+{str_repeat('-', 4)}+{str_repeat('-', 6)}+</pre>
+		<pre class="whitespace-pre">+----+----------------+--------------+----+----+------+
+|  # | Driver         | Team         |  W |  P |  pts |
++----+----------------+--------------+----+----+------+
+{foreach $drivers as $i => $d}| {sprintf('%2d', $i + 1)} | {sprintf('%-14s', mb_substr($d['full_name'] ?? '#' . $d['driver_number'], 0, 14))} | {sprintf('%-12s', mb_substr($d['team_name'] ?? '', 0, 12))} | {sprintf('%2s', $d['wins'])} | {sprintf('%2s', $d['podiums'])} | {sprintf('%4s', (int) $d['total_points'])} |
+{/foreach}+----+----------------+--------------+----+----+------+</pre>
 	{/if}
 </section>
 
@@ -26,15 +26,15 @@
 	<h2 class="text-sm font-bold mb-2 text-ink-soft">Constructors · {$year}</h2>
 
 	{if empty($constructors)}
-		<pre class="text-[12px] sm:text-sm text-ink-soft leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 56)}+
-| {sprintf('%-54s', 'No data yet')} |
-+{str_repeat('-', 56)}+</pre>
+		<pre class="text-ink-soft whitespace-pre">+{str_repeat('-', 44)}+
+| {sprintf('%-42s', 'No data yet')} |
++{str_repeat('-', 44)}+</pre>
 	{else}
-		<pre class="text-[12px] sm:text-sm leading-snug overflow-x-auto whitespace-pre">+{str_repeat('-', 4)}+{str_repeat('-', 24)}+{str_repeat('-', 4)}+{str_repeat('-', 4)}+{str_repeat('-', 6)}+
-|  # | Team                   |  W |  P |  pts |
-+{str_repeat('-', 4)}+{str_repeat('-', 24)}+{str_repeat('-', 4)}+{str_repeat('-', 4)}+{str_repeat('-', 6)}+
-{foreach $constructors as $i => $c}| {sprintf('%2d', $i + 1)} | {sprintf('%-22s', mb_substr($c['team_name'] ?? '', 0, 22))} | {sprintf('%2s', $c['wins'])} | {sprintf('%2s', $c['podiums'])} | {sprintf('%4s', (int) $c['total_points'])} |
-{/foreach}+{str_repeat('-', 4)}+{str_repeat('-', 24)}+{str_repeat('-', 4)}+{str_repeat('-', 4)}+{str_repeat('-', 6)}+</pre>
+		<pre class="whitespace-pre">+----+----------------------+----+----+------+
+|  # | Team                 |  W |  P |  pts |
++----+----------------------+----+----+------+
+{foreach $constructors as $i => $c}| {sprintf('%2d', $i + 1)} | {sprintf('%-20s', mb_substr($c['team_name'] ?? '', 0, 20))} | {sprintf('%2s', $c['wins'])} | {sprintf('%2s', $c['podiums'])} | {sprintf('%4s', (int) $c['total_points'])} |
+{/foreach}+----+----------------------+----+----+------+</pre>
 	{/if}
 </section>
 
