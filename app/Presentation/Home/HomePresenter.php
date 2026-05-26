@@ -75,10 +75,51 @@ final class HomePresenter extends \App\Presentation\BasePresenter
             }
         }
 
+        $nextSchedule = null;
+        if ($next !== null) {
+            $sessions = array_reverse($this->repo->getSessions((int) $next['meeting_key'])); // ASC by date_start
+            $raceStart = null;
+            foreach ($sessions as &$s) {
+                $s['is_done'] = !empty($s['date_end']) && new \DateTimeImmutable($s['date_end']) < $now;
+                if (($s['session_name'] ?? '') === 'Race' && $raceStart === null) {
+                    $raceStart = $s['date_start'];
+                }
+            }
+            unset($s);
+            $nextSchedule = [
+                'sessions' => $sessions,
+                'countdown' => $raceStart ? self::relativeTo(new \DateTimeImmutable($raceStart), $now) : null,
+            ];
+        }
+
         $this->template->year = $year;
         $this->template->years = $this->repo->getAvailableYears();
         $this->template->next = $next;
+        $this->template->nextSchedule = $nextSchedule;
         $this->template->lastResults = $lastResults;
         $this->template->meetings = $meetings;
+    }
+
+    /** Compact Slovak relative time to a future target, e.g. "o 2 dni 4 h". */
+    private static function relativeTo(\DateTimeImmutable $target, \DateTimeImmutable $now): array
+    {
+        if ($target <= $now) {
+            return ['live' => true, 'text' => null];
+        }
+        $diff = $now->diff($target);
+        $d = (int) $diff->days;
+        if ($d >= 1) {
+            $text = "o {$d} " . self::plural($d, 'deň', 'dni', 'dní') . ($diff->h ? " {$diff->h} h" : '');
+        } elseif ($diff->h >= 1) {
+            $text = "o {$diff->h} h" . ($diff->i ? " {$diff->i} min" : '');
+        } else {
+            $text = "o {$diff->i} min";
+        }
+        return ['live' => false, 'text' => $text];
+    }
+
+    private static function plural(int $n, string $one, string $few, string $many): string
+    {
+        return $n === 1 ? $one : ($n >= 2 && $n <= 4 ? $few : $many);
     }
 }
