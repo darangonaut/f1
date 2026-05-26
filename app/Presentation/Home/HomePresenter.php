@@ -14,9 +14,9 @@ final class HomePresenter extends \App\Presentation\BasePresenter
         parent::__construct();
     }
 
-    public function renderDefault(): void
+    public function renderDefault(?int $year = null): void
     {
-        $year = $this->repo->getLatestYear() ?? (int) date('Y');
+        $year = $year ?? $this->repo->getLatestYear() ?? (int) date('Y');
         $meetings = $this->repo->getMeetings($year);
 
         $now = new \DateTimeImmutable();
@@ -76,6 +76,7 @@ final class HomePresenter extends \App\Presentation\BasePresenter
         }
 
         $this->template->year = $year;
+        $this->template->years = $this->repo->getAvailableYears();
         $this->template->next = $next;
         $this->template->lastResults = $lastResults;
         $this->template->meetings = $meetings;

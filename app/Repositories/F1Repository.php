@@ -26,6 +26,15 @@ final class F1Repository
         return $y !== false && $y !== null ? (int) $y : null;
     }
 
+    /** All seasons present in DB, newest first. */
+    public function getAvailableYears(): array
+    {
+        return array_map(
+            fn($r) => (int) $r->year,
+            $this->db->fetchAll('SELECT DISTINCT year FROM meetings ORDER BY year DESC'),
+        );
+    }
+
     /** Sessions of a meeting, ordered by date_start DESC (Race first). */
     public function getSessions(int $meetingKey): array
     {
