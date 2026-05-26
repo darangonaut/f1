@@ -2,6 +2,7 @@
 // Sync F1 data from Jolpica-F1 (Ergast successor) → local DB. Run from cron in production.
 //   php bin/sync-f1.php                # current year
 //   php bin/sync-f1.php 2025           # specific year
+//   php bin/sync-f1.php 2019 --no-notify   # backfill without firing Telegram
 
 declare(strict_types=1);
 
@@ -37,8 +38,11 @@ foreach (preg_split('/;\s*$/m', $schemaSql) as $stmt) {
     }
 }
 
-$year = isset($argv[1]) ? (int) $argv[1] : (int) date('Y');
-echo "[sync] year={$year}\n";
+$args = array_slice($argv, 1);
+$notify = !in_array('--no-notify', $args, true);
+$positional = array_values(array_filter($args, fn($a) => !str_starts_with($a, '--')));
+$year = isset($positional[0]) ? (int) $positional[0] : (int) date('Y');
+echo "[sync] year={$year}" . ($notify ? '' : ' (no-notify)') . "\n";
 $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 $nowDt = new \DateTimeImmutable();
 
@@ -199,7 +203,7 @@ echo "[sync] done — " . json_encode($counts) . "\n";
 
 
 // Telegram notifications for newly imported Race results
-if (!empty($newRaceWins) && $telegram->isConfigured()) {
+if (!empty($newRaceWins) && $notify && $telegram->isConfigured()) {
     foreach ($newRaceWins as $event) {
         $m = $event['meeting'];
         $rows = array_filter($event['results'], fn($r) => $r['position'] !== null);
@@ -231,6 +235,8 @@ if (!empty($newRaceWins) && $telegram->isConfigured()) {
         $ok = $telegram->send($text);
         echo "[sync] telegram: $title — " . ($ok ? 'sent' : 'FAILED') . "\n";
     }
+} elseif (!empty($newRaceWins) && !$notify) {
+    echo "[sync] telegram: skipped (--no-notify)\n";
 } elseif (!empty($newRaceWins)) {
     echo "[sync] telegram: skipped (not configured)\n";
 }
