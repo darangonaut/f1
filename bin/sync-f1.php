@@ -155,12 +155,19 @@ foreach ($races as $race) {
 
         $mapped = [];
         foreach ($rows as $r) {
-            $driverNumber = (int) ($r['number'] ?? $r['Driver']['permanentNumber'] ?? 0);
-            $row = mapResultRow($r, $driverNumber, $now);
+            $driverId = $r['Driver']['driverId'] ?? null;
+            if ($driverId === null) {
+                continue;
+            }
+            $driverNumber = isset($r['number']) ? (int) $r['number'] : null;
+            $constructorId = $r['Constructor']['constructorId'] ?? null;
+            $row = mapResultRow($r, $driverId);
             $mapped[] = $row;
-            upsertComposite($db, 'session_results', ['session_key', 'driver_number'], [
+            upsertComposite($db, 'session_results', ['session_key', 'driver_id'], [
                 'session_key' => $sk,
+                'driver_id' => $driverId,
                 'driver_number' => $driverNumber,
+                'constructor_id' => $constructorId,
                 'position' => $row['position'],
                 'points' => $row['points'],
                 'number_of_laps' => $row['number_of_laps'],
@@ -171,16 +178,16 @@ foreach ($races as $race) {
                 'dsq' => $row['dsq'],
                 'fetched_at' => $now,
             ]);
-            upsertComposite($db, 'drivers', ['driver_number', 'year'], [
-                'driver_number' => $driverNumber,
+            upsertComposite($db, 'drivers', ['driver_id', 'year'], [
+                'driver_id' => $driverId,
                 'year' => $year,
+                'driver_number' => $driverNumber,
                 'full_name' => trim(($r['Driver']['givenName'] ?? '') . ' ' . ($r['Driver']['familyName'] ?? '')),
-                'broadcast_name' => null,
                 'name_acronym' => $r['Driver']['code'] ?? null,
+                'country_code' => null,
+                'constructor_id' => $constructorId,
                 'team_name' => $r['Constructor']['name'] ?? null,
                 'team_colour' => null,
-                'country_code' => null,
-                'headshot_url' => null,
                 'fetched_at' => $now,
             ]);
         }
@@ -196,11 +203,44 @@ foreach ($races as $race) {
     }
 }
 
+// Official championship standings (authoritative: dropped-scores & half-points eras
+// rank correctly here, unlike summing raw race points). Refreshed each run.
+foreach ($api->getDriverStandings($year) as $ds) {
+    $did = $ds['Driver']['driverId'] ?? null;
+    if ($did === null) {
+        continue;
+    }
+    upsertComposite($db, 'driver_standings', ['year', 'driver_id'], [
+        'year' => $year,
+        'driver_id' => $did,
+        'position' => isset($ds['position']) ? (int) $ds['position'] : null,
+        'points' => isset($ds['points']) ? (float) $ds['points'] : null,
+        'wins' => isset($ds['wins']) ? (int) $ds['wins'] : null,
+        'fetched_at' => $now,
+    ]);
+}
+foreach ($api->getConstructorStandings($year) as $cs) {
+    $cid = $cs['Constructor']['constructorId'] ?? null;
+    if ($cid === null) {
+        continue;
+    }
+    upsertComposite($db, 'constructor_standings', ['year', 'constructor_id'], [
+        'year' => $year,
+        'constructor_id' => $cid,
+        'constructor_name' => $cs['Constructor']['name'] ?? null,
+        'position' => isset($cs['position']) ? (int) $cs['position'] : null,
+        'points' => isset($cs['points']) ? (float) $cs['points'] : null,
+        'wins' => isset($cs['wins']) ? (int) $cs['wins'] : null,
+        'fetched_at' => $now,
+    ]);
+}
+
 $counts = [
     'meetings' => $db->fetchField('SELECT COUNT(*) FROM meetings WHERE year = ?', $year),
     'sessions' => $db->fetchField('SELECT COUNT(*) FROM sessions s JOIN meetings m ON s.meeting_key = m.meeting_key WHERE m.year = ?', $year),
     'session_results' => $db->fetchField('SELECT COUNT(*) FROM session_results sr JOIN sessions s ON sr.session_key = s.session_key JOIN meetings m ON s.meeting_key = m.meeting_key WHERE m.year = ?', $year),
     'drivers' => $db->fetchField('SELECT COUNT(*) FROM drivers WHERE year = ?', $year),
+    'standings' => $db->fetchField('SELECT COUNT(*) FROM driver_standings WHERE year = ?', $year),
 ];
 echo "[sync] done — " . json_encode($counts) . "\n";
 
@@ -214,8 +254,8 @@ if (!empty($newRaceWins) && $notify && $telegram->isConfigured()) {
         $top3 = array_slice($rows, 0, 3);
 
         $drivers = [];
-        foreach ($db->fetchAll('SELECT driver_number, full_name, team_name FROM drivers WHERE year = ?', (int) $m['year']) as $d) {
-            $drivers[(int) $d->driver_number] = (array) $d;
+        foreach ($db->fetchAll('SELECT driver_id, full_name, team_name FROM drivers WHERE year = ?', (int) $m['year']) as $d) {
+            $drivers[$d->driver_id] = (array) $d;
         }
 
         $title = $m['meeting_name'];
@@ -223,9 +263,9 @@ if (!empty($newRaceWins) && $notify && $telegram->isConfigured()) {
         $podiumLines = [];
         $medals = ['🥇', '🥈', '🥉'];
         foreach ($top3 as $i => $r) {
-            $dn = (int) $r['driver_number'];
-            $name = $drivers[$dn]['full_name'] ?? "#$dn";
-            $team = $drivers[$dn]['team_name'] ?? '';
+            $did = $r['driver_id'];
+            $name = $drivers[$did]['full_name'] ?? $did;
+            $team = $drivers[$did]['team_name'] ?? '';
             $pts = $r['points'] !== null ? ' \\(' . (int) $r['points'] . ' pts\\)' : '';
             $podiumLines[] = ($medals[$i] ?? ($i + 1) . '.') . ' ' . $esc($name) . ($team ? ' — ' . $esc($team) : '') . $pts;
         }
@@ -246,7 +286,7 @@ if (!empty($newRaceWins) && $notify && $telegram->isConfigured()) {
 
 
 /** Map one Ergast result row to our session_results columns. positionText carries the classification code. */
-function mapResultRow(array $r, int $driverNumber, string $now): array
+function mapResultRow(array $r, string $driverId): array
 {
     $posText = $r['positionText'] ?? (string) ($r['position'] ?? '');
     $status = $r['status'] ?? '';
@@ -260,7 +300,7 @@ function mapResultRow(array $r, int $driverNumber, string $now): array
         'points' => isset($r['points']) ? (float) $r['points'] : null,
         'number_of_laps' => isset($r['laps']) ? (int) $r['laps'] : null,
         'duration' => isset($r['Time']['millis']) ? ((float) $r['Time']['millis']) / 1000 : null,
-        'driver_number' => $driverNumber,
+        'driver_id' => $driverId,
         'dnf' => $dnf,
         'dns' => $dns,
         'dsq' => $dsq,

@@ -23,7 +23,7 @@ final class ConstructorPresenter extends \App\Presentation\BasePresenter
         }
 
         $season = [];
-        foreach ($this->repo->getConstructorSeason($constructor['team_name'], $year) as $r) {
+        foreach ($this->repo->getConstructorSeason($id, $year) as $r) {
             $mk = (int) $r['meeting_key'];
             if (!isset($season[$mk])) {
                 $season[$mk] = [
@@ -39,7 +39,7 @@ final class ConstructorPresenter extends \App\Presentation\BasePresenter
 
         $this->template->year = $year;
         $this->template->constructor = $constructor;
-        $this->template->drivers = $this->repo->getConstructorDrivers($constructor['team_name'], $year);
+        $this->template->drivers = $this->repo->getConstructorDrivers($id, $year);
         $this->template->season = array_values($season);
     }
 }

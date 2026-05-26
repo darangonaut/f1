@@ -55,6 +55,22 @@ final class JolpicaClient
         return $races[0]['QualifyingResults'] ?? [];
     }
 
+    /** Official end-of-season (or current) driver standings — handles dropped-scores eras correctly. */
+    public function getDriverStandings(int $year): array
+    {
+        $data = $this->get("$year/driverStandings");
+        $lists = $data['MRData']['StandingsTable']['StandingsLists'] ?? [];
+        return $lists[0]['DriverStandings'] ?? [];
+    }
+
+    /** Official constructor standings (constructors' championship exists from 1958). */
+    public function getConstructorStandings(int $year): array
+    {
+        $data = $this->get("$year/constructorStandings");
+        $lists = $data['MRData']['StandingsTable']['StandingsLists'] ?? [];
+        return $lists[0]['ConstructorStandings'] ?? [];
+    }
+
     /** Fetch + parse JSON with cache. Retries transient failures; short TTL for empties so reloads can recover. */
     private function get(string $path, int $ttlSeconds = 300): array
     {
