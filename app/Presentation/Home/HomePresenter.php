@@ -63,15 +63,24 @@ final class HomePresenter extends \App\Presentation\BasePresenter
         }
         unset($m);
 
+        // Season over (no live/upcoming event) → highlight the World Champion.
+        // Season in progress → highlight the most recent race winner.
+        $champion = null;
+        $constructorChampion = null;
         $lastResults = null;
-        foreach (array_reverse($meetings) as $m) {
-            if (!$m['is_past']) {
-                continue;
-            }
-            $w = $this->repo->getMeetingWinner((int) $m['meeting_key'], $year);
-            if ($w !== null && !empty($w['driver']['full_name'])) {
-                $lastResults = ['meeting' => $m, 'winner' => $w];
-                break;
+        if ($next === null) {
+            $champion = $this->repo->getDriverStandings($year)[0] ?? null;
+            $constructorChampion = $this->repo->getConstructorStandings($year)[0] ?? null;
+        } else {
+            foreach (array_reverse($meetings) as $m) {
+                if (!$m['is_past']) {
+                    continue;
+                }
+                $w = $this->repo->getMeetingWinner((int) $m['meeting_key'], $year);
+                if ($w !== null && !empty($w['driver']['full_name'])) {
+                    $lastResults = ['meeting' => $m, 'winner' => $w];
+                    break;
+                }
             }
         }
 
@@ -97,6 +106,8 @@ final class HomePresenter extends \App\Presentation\BasePresenter
         $this->template->next = $next;
         $this->template->nextSchedule = $nextSchedule;
         $this->template->lastResults = $lastResults;
+        $this->template->champion = $champion;
+        $this->template->constructorChampion = $constructorChampion;
         $this->template->meetings = $meetings;
     }
 
