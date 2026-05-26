@@ -1,3 +1,23 @@
+{define yearNav}
+	{* params: $years (desc), $year, $prevYear, $nextYear, $dest *}
+	{if count($years) > 1}
+		<div class="flex flex-wrap items-center gap-1.5 mb-4">
+			{if $year !== ($years[0] ?? null)}
+				<span class="inline-flex items-center border-2 border-black mr-1">
+					{if $prevYear}<a href="{plink $dest, year => $prevYear}" class="px-2 py-1 text-[13px] font-black leading-none hover:bg-f1-red hover:text-white">‹</a>{else}<span class="px-2 py-1 text-[13px] font-black leading-none text-gray-300">‹</span>{/if}
+					<span class="px-2.5 py-1 text-[13px] font-black leading-none bg-black text-white tabular-nums">{$year}</span>
+					{if $nextYear}<a href="{plink $dest, year => $nextYear}" class="px-2 py-1 text-[13px] font-black leading-none hover:bg-f1-red hover:text-white">›</a>{else}<span class="px-2 py-1 text-[13px] font-black leading-none text-gray-300">›</span>{/if}
+				</span>
+			{/if}
+			{foreach array_slice($years, 0, 5) as $y}
+				<a href="{plink $dest, year => $y}" class="px-2.5 py-1 text-[12px] font-bold border-2 {$y === $year ? 'bg-black text-white border-black' : 'text-gray-500 border-transparent hover:bg-amber-50 hover:text-black'}">{$y}</a>
+			{/foreach}
+			{if count($years) > 5}
+				<a href="{plink Seasons:default}" class="px-2.5 py-1 text-[14px] font-black border-2 border-transparent text-gray-500 hover:bg-amber-50 hover:text-black leading-none" title="Všetky sezóny">…</a>
+			{/if}
+		</div>
+	{/if}
+{/define}
 <!DOCTYPE html>
 <html lang="en">
 <head>

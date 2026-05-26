@@ -2,13 +2,7 @@
 
 <a href="{plink Home:default, year => $year}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Sezóna</a>
 
-{if count($years) > 1}
-	<div class="flex flex-wrap gap-1.5 mb-4">
-		{foreach $years as $y}
-			<a href="{plink Standings:default, year => $y}" class="px-2.5 py-1 text-[12px] font-bold border-2 {$y === $year ? 'bg-black text-white border-black' : 'text-gray-500 border-transparent hover:bg-amber-50 hover:text-black'}">{$y}</a>
-		{/foreach}
-	</div>
-{/if}
+{include yearNav, years => $years, year => $year, prevYear => $prevYear, nextYear => $nextYear, dest => 'Standings:default'}
 
 <h2 class="text-[13px] font-black uppercase tracking-[0.14em] text-black mt-0 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
 	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
