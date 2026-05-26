@@ -126,8 +126,8 @@ final class F1Repository
                 d.team_colour,
                 d.country_code,
                 SUM(sr.points) AS total_points,
-                SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
-                SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums
+                SUM(CASE WHEN sr.position = 1 AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS wins,
+                SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS podiums
              FROM session_results sr
              JOIN sessions s ON s.session_key = sr.session_key
              JOIN meetings m ON m.meeting_key = s.meeting_key
@@ -150,8 +150,8 @@ final class F1Repository
                 d.team_name,
                 d.team_colour,
                 SUM(sr.points) AS total_points,
-                SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
-                SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums
+                SUM(CASE WHEN sr.position = 1 AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS wins,
+                SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS podiums
              FROM session_results sr
              JOIN sessions s ON s.session_key = sr.session_key
              JOIN meetings m ON m.meeting_key = s.meeting_key
@@ -194,8 +194,8 @@ final class F1Repository
         $rows = $this->db->fetchAll(
             'SELECT sr.driver_number, d.full_name, d.name_acronym,
                     SUM(sr.points) AS total_points,
-                    SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
-                    SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums
+                    SUM(CASE WHEN sr.position = 1 AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS wins,
+                    SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS podiums
              FROM session_results sr
              JOIN sessions s ON s.session_key = sr.session_key
              JOIN meetings m ON m.meeting_key = s.meeting_key
@@ -258,8 +258,8 @@ final class F1Repository
     {
         $agg = $this->db->fetch(
             'SELECT SUM(sr.points) AS total_points,
-                    SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
-                    SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums,
+                    SUM(CASE WHEN sr.position = 1 AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS wins,
+                    SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL AND s.session_name = \'Race\' THEN 1 ELSE 0 END) AS podiums,
                     SUM(CASE WHEN sr.dnf = 1 THEN 1 ELSE 0 END) AS dnfs
              FROM session_results sr
              JOIN sessions s ON s.session_key = sr.session_key
