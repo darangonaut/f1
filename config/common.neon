@@ -41,6 +41,6 @@ di:
 
 
 services:
-	- App\Services\OpenF1Client
+	- App\Services\JolpicaClient
 	- App\Repositories\F1Repository
 	- App\Services\TelegramNotifier(%telegram.botToken%, %telegram.chatId%)

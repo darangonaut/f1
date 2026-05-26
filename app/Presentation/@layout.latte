@@ -23,7 +23,7 @@
 		</a>
 		<nav class="flex items-center gap-4">
 			<a href="{plink Standings:default}" class="text-[11px] font-bold tracking-[0.16em] uppercase border-b-2 border-transparent hover:border-f1-red transition-colors">Poradie</a>
-			<span class="text-[11px] font-semibold tracking-[0.16em] text-gray-400 uppercase hidden sm:inline">openf1.org</span>
+			<span class="text-[11px] font-semibold tracking-[0.16em] text-gray-400 uppercase hidden sm:inline">jolpi.ca</span>
 		</nav>
 	</div>
 </header>
@@ -36,7 +36,7 @@
 
 	<footer class="mt-16 pt-[18px] border-t-[3px] border-black text-xs font-semibold text-gray-500 text-center space-y-1">
 		<div>
-			Plaintext F1 stats · Data from <a class="text-f1-red font-bold" href="https://openf1.org/" target="_blank">openf1.org</a> · Site by <a class="text-f1-red font-bold" href="https://markuska.cz" target="_blank">markuska</a>
+			Plaintext F1 stats · Data from <a class="text-f1-red font-bold" href="https://api.jolpi.ca/ergast/" target="_blank">jolpi.ca</a> · Site by <a class="text-f1-red font-bold" href="https://markuska.cz" target="_blank">markuska</a>
 		</div>
 		<div n:if="isset($lastSyncAt) && $lastSyncAt !== null" class="text-gray-400">
 			Posledná aktualizácia: <time datetime="{$lastSyncAt->format('c')}">{$lastSyncAt->format('j. n. Y · H:i')}</time>

@@ -1,5 +1,5 @@
 <?php
-// Sync F1 data from OpenF1 → local DB. Run from cron in production.
+// Sync F1 data from Jolpica-F1 (Ergast successor) → local DB. Run from cron in production.
 //   php bin/sync-f1.php                # current year
 //   php bin/sync-f1.php 2025           # specific year
 
@@ -21,8 +21,8 @@ $container = $configurator->createContainer();
 /** @var \Nette\Database\Explorer $db */
 $db = $container->getByType(\Nette\Database\Explorer::class);
 
-/** @var \App\Services\OpenF1Client $api */
-$api = $container->getByType(\App\Services\OpenF1Client::class);
+/** @var \App\Services\JolpicaClient $api */
+$api = $container->getByType(\App\Services\JolpicaClient::class);
 
 /** @var \App\Services\TelegramNotifier $telegram */
 $telegram = $container->getByType(\App\Services\TelegramNotifier::class);
@@ -40,130 +40,154 @@ foreach (preg_split('/;\s*$/m', $schemaSql) as $stmt) {
 $year = isset($argv[1]) ? (int) $argv[1] : (int) date('Y');
 echo "[sync] year={$year}\n";
 $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
-
-// 1) Meetings
-$meetings = $api->getMeetings($year);
-if (empty($meetings)) {
-    echo "[sync] no meetings for $year, trying previous year\n";
-    $year--;
-    $meetings = $api->getMeetings($year);
-}
-echo "[sync] fetched " . count($meetings) . " meetings\n";
-
-foreach ($meetings as $m) {
-    upsert($db, 'meetings', 'meeting_key', [
-        'meeting_key' => (int) $m['meeting_key'],
-        'year' => (int) ($m['year'] ?? $year),
-        'meeting_name' => $m['meeting_name'] ?? null,
-        'meeting_official_name' => $m['meeting_official_name'] ?? null,
-        'country_code' => $m['country_code'] ?? null,
-        'country_name' => $m['country_name'] ?? null,
-        'location' => $m['location'] ?? null,
-        'circuit_short_name' => $m['circuit_short_name'] ?? null,
-        'date_start' => $m['date_start'],
-        'fetched_at' => $now,
-    ]);
-}
-
-// 2) Sessions + results for past meetings only
 $nowDt = new \DateTimeImmutable();
-foreach ($meetings as $m) {
-    $startDt = new \DateTimeImmutable($m['date_start']);
-    if ($startDt->modify('+5 days') > $nowDt) {
-        // weekend not finished yet; skip results — sessions still synced for future visibility
+
+// 1) Schedule
+$races = $api->getSchedule($year);
+if (empty($races)) {
+    echo "[sync] no races for $year, trying previous year\n";
+    $year--;
+    $races = $api->getSchedule($year);
+}
+echo "[sync] fetched " . count($races) . " races\n";
+
+// session sub-object => [session_key offset, session_type, session_name, duration minutes]
+// Sprint is stored as session_type 'Race' so its points feed driver/constructor standings.
+$sessionSpecs = [
+    'Race'             => [0, 'Race', 'Race', 180],
+    'Qualifying'       => [1, 'Qualifying', 'Qualifying', 60],
+    'Sprint'           => [2, 'Race', 'Sprint', 60],
+    'SprintQualifying' => [3, 'Qualifying', 'Sprint Qualifying', 45],
+    'SprintShootout'   => [3, 'Qualifying', 'Sprint Shootout', 45],
+    'FirstPractice'    => [4, 'Practice', 'Practice 1', 60],
+    'SecondPractice'   => [5, 'Practice', 'Practice 2', 60],
+    'ThirdPractice'    => [6, 'Practice', 'Practice 3', 60],
+];
+
+foreach ($races as $race) {
+    $round = (int) $race['round'];
+    $meetingKey = $year * 100 + $round;
+
+    // Collect this round's sessions with absolute start/end datetimes.
+    $sessions = [];   // ergastKey => ['start' => DateTimeImmutable, 'end' => DateTimeImmutable]
+    foreach ($sessionSpecs as $ergastKey => [$offset, $type, $sname, $durMin]) {
+        $node = $ergastKey === 'Race'
+            ? ['date' => $race['date'] ?? null, 'time' => $race['time'] ?? null]
+            : ($race[$ergastKey] ?? null);
+        if ($node === null || empty($node['date'])) {
+            continue;
+        }
+        $start = new \DateTimeImmutable(($node['date']) . 'T' . ($node['time'] ?? '00:00:00Z'));
+        $sessions[$ergastKey] = [
+            'session_key' => $meetingKey * 10 + $offset,
+            'type' => $type,
+            'name' => $sname,
+            'start' => $start,
+            'end' => $start->modify("+{$durMin} minutes"),
+        ];
     }
 
-    $mk = (int) $m['meeting_key'];
-    $sessions = $api->getSessions($mk);
+    if (empty($sessions)) {
+        continue;
+    }
+
+    // Meeting start = earliest session of the weekend (matches the "weekend start" label).
+    $weekendStart = null;
+    foreach ($sessions as $s) {
+        if ($weekendStart === null || $s['start'] < $weekendStart) {
+            $weekendStart = $s['start'];
+        }
+    }
+
+    $loc = $race['Circuit']['Location'] ?? [];
+    $country = $loc['country'] ?? null;
+    upsert($db, 'meetings', 'meeting_key', [
+        'meeting_key' => $meetingKey,
+        'year' => $year,
+        'meeting_name' => $race['raceName'] ?? null,
+        'meeting_official_name' => $race['raceName'] ?? null,
+        'country_code' => countryCode($country),
+        'country_name' => $country,
+        'location' => $loc['locality'] ?? null,
+        'circuit_short_name' => $loc['locality'] ?? null,
+        'date_start' => $weekendStart->format(DATE_ATOM),
+        'fetched_at' => $now,
+    ]);
+
     foreach ($sessions as $s) {
         upsert($db, 'sessions', 'session_key', [
-            'session_key' => (int) $s['session_key'],
-            'meeting_key' => $mk,
-            'session_name' => $s['session_name'] ?? null,
-            'session_type' => $s['session_type'] ?? null,
-            'date_start' => $s['date_start'] ?? null,
-            'date_end' => $s['date_end'] ?? null,
+            'session_key' => $s['session_key'],
+            'meeting_key' => $meetingKey,
+            'session_name' => $s['name'],
+            'session_type' => $s['type'],
+            'date_start' => $s['start']->format(DATE_ATOM),
+            'date_end' => $s['end']->format(DATE_ATOM),
             'fetched_at' => $now,
         ]);
     }
 
-    // Results: only for sessions that have ended
-    foreach ($sessions as $s) {
-        if (empty($s['date_end']) || (new \DateTimeImmutable($s['date_end'])) > $nowDt) {
+    // Results: only for ended classified sessions (Race, Sprint, Qualifying).
+    foreach (['Race', 'Sprint', 'Qualifying'] as $ergastKey) {
+        if (!isset($sessions[$ergastKey]) || $sessions[$ergastKey]['end'] > $nowDt) {
             continue;
         }
-        $sk = (int) $s['session_key'];
-        $existing = $db->fetchField('SELECT COUNT(*) FROM session_results WHERE session_key = ?', $sk);
-        if ($existing > 0) {
+        $sk = $sessions[$ergastKey]['session_key'];
+        if ((int) $db->fetchField('SELECT COUNT(*) FROM session_results WHERE session_key = ?', $sk) > 0) {
             continue;
         }
-        $results = $api->getSessionResult($sk);
-        if (empty($results)) {
-            echo "  session $sk ({$s['session_name']}): no results yet\n";
+
+        $rows = match ($ergastKey) {
+            'Race' => $api->getRaceResults($year, $round),
+            'Sprint' => $api->getSprintResults($year, $round),
+            'Qualifying' => $api->getQualifyingResults($year, $round),
+        };
+        if (empty($rows)) {
+            echo "  round $round {$sessions[$ergastKey]['name']}: no results yet\n";
             continue;
         }
-        foreach ($results as $r) {
+
+        $mapped = [];
+        foreach ($rows as $r) {
+            $driverNumber = (int) ($r['number'] ?? $r['Driver']['permanentNumber'] ?? 0);
+            $row = mapResultRow($r, $driverNumber, $now);
+            $mapped[] = $row;
             upsertComposite($db, 'session_results', ['session_key', 'driver_number'], [
                 'session_key' => $sk,
-                'driver_number' => (int) $r['driver_number'],
-                'position' => isset($r['position']) ? (int) $r['position'] : null,
-                'points' => isset($r['points']) ? (float) $r['points'] : null,
-                'number_of_laps' => isset($r['number_of_laps']) ? (int) $r['number_of_laps'] : null,
-                'duration' => isset($r['duration']) ? (float) $r['duration'] : null,
-                'gap_to_leader' => isset($r['gap_to_leader']) ? (float) $r['gap_to_leader'] : null,
-                'dnf' => !empty($r['dnf']) ? 1 : 0,
-                'dns' => !empty($r['dns']) ? 1 : 0,
-                'dsq' => !empty($r['dsq']) ? 1 : 0,
+                'driver_number' => $driverNumber,
+                'position' => $row['position'],
+                'points' => $row['points'],
+                'number_of_laps' => $row['number_of_laps'],
+                'duration' => $row['duration'],
+                'gap_to_leader' => null,
+                'dnf' => $row['dnf'],
+                'dns' => $row['dns'],
+                'dsq' => $row['dsq'],
+                'fetched_at' => $now,
+            ]);
+            upsertComposite($db, 'drivers', ['driver_number', 'year'], [
+                'driver_number' => $driverNumber,
+                'year' => $year,
+                'full_name' => trim(($r['Driver']['givenName'] ?? '') . ' ' . ($r['Driver']['familyName'] ?? '')),
+                'broadcast_name' => null,
+                'name_acronym' => $r['Driver']['code'] ?? null,
+                'team_name' => $r['Constructor']['name'] ?? null,
+                'team_colour' => null,
+                'country_code' => null,
+                'headshot_url' => null,
                 'fetched_at' => $now,
             ]);
         }
-        echo "  session $sk ({$s['session_name']}): " . count($results) . " results\n";
+        echo "  round $round {$sessions[$ergastKey]['name']}: " . count($mapped) . " results\n";
 
-        // If this is the main Race and we just imported results for the first time, queue a notification
-        if (($s['session_type'] ?? '') === 'Race' && ($s['session_name'] ?? '') === 'Race') {
-            $newRaceWins[] = ['meeting' => $m, 'session' => $s, 'results' => $results];
+        if ($ergastKey === 'Race') {
+            $newRaceWins[] = ['meeting' => [
+                'meeting_key' => $meetingKey,
+                'year' => $year,
+                'meeting_name' => $race['raceName'] ?? 'Race',
+            ], 'results' => $mapped];
         }
     }
 }
-
-// 3) Drivers for the year (try sessions until we have a complete list)
-$haveNumbers = array_column(
-    $db->fetchAll('SELECT driver_number FROM drivers WHERE year = ?', $year),
-    'driver_number',
-);
-$haveSet = array_flip($haveNumbers);
-$pastSessions = $db->fetchAll(
-    'SELECT s.session_key FROM sessions s JOIN meetings m ON m.meeting_key = s.meeting_key
-     WHERE m.year = ? AND s.date_end IS NOT NULL AND s.date_end < ?
-     ORDER BY s.date_end DESC LIMIT 30',
-    $year,
-    $nowDt->format(DATE_ATOM),
-);
-foreach ($pastSessions as $row) {
-    if (count($haveSet) >= 22) {
-        break;
-    }
-    $drivers = $api->getDrivers((int) $row->session_key);
-    foreach ($drivers as $d) {
-        if (isset($haveSet[$d['driver_number']])) {
-            continue;
-        }
-        upsertComposite($db, 'drivers', ['driver_number', 'year'], [
-            'driver_number' => (int) $d['driver_number'],
-            'year' => $year,
-            'full_name' => $d['full_name'] ?? null,
-            'broadcast_name' => $d['broadcast_name'] ?? null,
-            'name_acronym' => $d['name_acronym'] ?? null,
-            'team_name' => $d['team_name'] ?? null,
-            'team_colour' => $d['team_colour'] ?? null,
-            'country_code' => $d['country_code'] ?? null,
-            'headshot_url' => $d['headshot_url'] ?? null,
-            'fetched_at' => $now,
-        ]);
-        $haveSet[$d['driver_number']] = true;
-    }
-}
-echo "[sync] drivers cached: " . count($haveSet) . "\n";
 
 $counts = [
     'meetings' => $db->fetchField('SELECT COUNT(*) FROM meetings WHERE year = ?', $year),
@@ -174,22 +198,20 @@ $counts = [
 echo "[sync] done — " . json_encode($counts) . "\n";
 
 
-// 4) Telegram notifications for newly imported Race results
+// Telegram notifications for newly imported Race results
 if (!empty($newRaceWins) && $telegram->isConfigured()) {
     foreach ($newRaceWins as $event) {
         $m = $event['meeting'];
-        $rows = $event['results'];
-        $rows = array_filter($rows, fn($r) => isset($r['position']) && $r['position'] !== null);
-        usort($rows, fn($a, $b) => ((int) $a['position']) <=> ((int) $b['position']));
+        $rows = array_filter($event['results'], fn($r) => $r['position'] !== null);
+        usort($rows, fn($a, $b) => $a['position'] <=> $b['position']);
         $top3 = array_slice($rows, 0, 3);
 
-        // Driver name lookup (from drivers table by number)
         $drivers = [];
-        foreach ($db->fetchAll('SELECT driver_number, full_name, team_name FROM drivers WHERE year = ?', (int) ($m['year'] ?? $year)) as $d) {
+        foreach ($db->fetchAll('SELECT driver_number, full_name, team_name FROM drivers WHERE year = ?', (int) $m['year']) as $d) {
             $drivers[(int) $d->driver_number] = (array) $d;
         }
 
-        $title = $m['meeting_name'] ?? $m['meeting_official_name'] ?? 'Race';
+        $title = $m['meeting_name'];
         $esc = fn($s) => \App\Services\TelegramNotifier::escape((string) $s);
         $podiumLines = [];
         $medals = ['🥇', '🥈', '🥉'];
@@ -197,7 +219,7 @@ if (!empty($newRaceWins) && $telegram->isConfigured()) {
             $dn = (int) $r['driver_number'];
             $name = $drivers[$dn]['full_name'] ?? "#$dn";
             $team = $drivers[$dn]['team_name'] ?? '';
-            $pts = isset($r['points']) ? ' \\(' . (int) $r['points'] . ' pts\\)' : '';
+            $pts = $r['points'] !== null ? ' \\(' . (int) $r['points'] . ' pts\\)' : '';
             $podiumLines[] = ($medals[$i] ?? ($i + 1) . '.') . ' ' . $esc($name) . ($team ? ' — ' . $esc($team) : '') . $pts;
         }
         $url = 'https://f1\\.markuska\\.cz/race/' . (int) $m['meeting_key'];
@@ -213,6 +235,47 @@ if (!empty($newRaceWins) && $telegram->isConfigured()) {
     echo "[sync] telegram: skipped (not configured)\n";
 }
 
+
+/** Map one Ergast result row to our session_results columns. positionText carries the classification code. */
+function mapResultRow(array $r, int $driverNumber, string $now): array
+{
+    $posText = $r['positionText'] ?? (string) ($r['position'] ?? '');
+    $status = $r['status'] ?? '';
+
+    $dsq = in_array($posText, ['D', 'E'], true) || $status === 'Disqualified' ? 1 : 0;
+    $dns = (in_array($posText, ['W', 'F'], true) || $status === 'Did not start') ? 1 : 0;
+    $dnf = (!$dsq && !$dns && in_array($posText, ['R', 'N'], true)) ? 1 : 0;
+
+    return [
+        'position' => isset($r['position']) ? (int) $r['position'] : null,
+        'points' => isset($r['points']) ? (float) $r['points'] : null,
+        'number_of_laps' => isset($r['laps']) ? (int) $r['laps'] : null,
+        'duration' => isset($r['Time']['millis']) ? ((float) $r['Time']['millis']) / 1000 : null,
+        'driver_number' => $driverNumber,
+        'dnf' => $dnf,
+        'dns' => $dns,
+        'dsq' => $dsq,
+    ];
+}
+
+/** 3-letter code for the country badge. Ergast gives only the country name. */
+function countryCode(?string $country): ?string
+{
+    if ($country === null) {
+        return null;
+    }
+    static $map = [
+        'Australia' => 'AUS', 'China' => 'CHN', 'Japan' => 'JPN', 'Bahrain' => 'BHR',
+        'Saudi Arabia' => 'SAU', 'USA' => 'USA', 'United States' => 'USA', 'UAE' => 'UAE',
+        'United Arab Emirates' => 'UAE', 'Italy' => 'ITA', 'Monaco' => 'MON', 'Canada' => 'CAN',
+        'Spain' => 'ESP', 'Austria' => 'AUT', 'UK' => 'GBR', 'United Kingdom' => 'GBR',
+        'Hungary' => 'HUN', 'Belgium' => 'BEL', 'Netherlands' => 'NED', 'Azerbaijan' => 'AZE',
+        'Singapore' => 'SGP', 'Mexico' => 'MEX', 'Brazil' => 'BRA', 'Qatar' => 'QAT',
+        'France' => 'FRA', 'Portugal' => 'POR', 'Turkey' => 'TUR', 'Germany' => 'GER',
+        'Russia' => 'RUS', 'Vietnam' => 'VIE',
+    ];
+    return $map[$country] ?? strtoupper(substr($country, 0, 3));
+}
 
 function upsert(\Nette\Database\Explorer $db, string $table, string $pkColumn, array $row): void
 {
