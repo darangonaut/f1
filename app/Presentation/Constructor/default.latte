@@ -1,0 +1,85 @@
+{block content}
+
+<a href="{plink Standings:default, year => $year}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Poradie</a>
+
+<h2 class="text-xl font-black mt-0 mb-1 uppercase tracking-tight">{$constructor['team_name']}</h2>
+
+<div class="bg-white border-2 border-black p-[18px] mb-6">
+	<div class="grid grid-cols-4 gap-3 text-center">
+		<div>
+			<div class="text-2xl font-black {$constructor['rank'] === 1 ? 'text-f1-red' : 'text-black'}">{$constructor['rank']}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Poradie</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black text-black">{$constructor['total_points']|number:0,'',''}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Body</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black {$constructor['wins'] > 0 ? 'text-f1-red' : 'text-gray-300'}">{$constructor['wins']}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Víťazstvá</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black {$constructor['podiums'] > 0 ? 'text-black' : 'text-gray-300'}">{$constructor['podiums']}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Pódiá</div>
+		</div>
+	</div>
+</div>
+
+<h3 class="text-[13px] font-black uppercase tracking-[0.14em] mt-8 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+	Jazdci · {$year}
+</h3>
+
+<div class="space-y-2 mb-6">
+	{foreach $drivers as $d}
+		<a href="{plink Driver:default, number => $d['driver_number'], year => $year}" class="flex justify-between items-baseline gap-3 bg-white border-2 border-gray-100 hover:border-f1-red hover:bg-amber-50 transition-colors p-3 border-0">
+			<span class="text-[15px] font-bold">{$d['full_name'] ?? '#' . $d['driver_number']}</span>
+			<span class="text-[14px] font-semibold text-gray-500">
+				{$d['total_points']|number:0,'',''} b
+				{if $d['wins'] > 0} · {$d['wins']} V{/if}
+				{if $d['podiums'] > 0} · {$d['podiums']} P{/if}
+			</span>
+		</a>
+	{/foreach}
+</div>
+
+<h3 class="text-[13px] font-black uppercase tracking-[0.14em] mt-8 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+	Sezóna {$year}
+</h3>
+
+{if empty($season)}
+	<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide">Žiadne výsledky.</div>
+{else}
+	<table class="w-full border-collapse tabular-nums">
+		<thead>
+			<tr class="bg-black text-white">
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Veľká cena</th>
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Umiestnenie</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[60px]">Body</th>
+			</tr>
+		</thead>
+		<tbody>
+		{foreach $season as $gp}
+			<tr class="border-b-2 border-gray-100 hover:bg-amber-50">
+				<td class="px-2 py-2.5 text-[15px] font-semibold">
+					<a href="{plink Race:default, meetingKey => $gp['meeting_key']}" class="hover:text-f1-red border-0">{$gp['meeting_name']}</a>
+				</td>
+				<td class="px-2 py-2.5 text-[14px]">
+					{foreach $gp['drivers'] as $dr}
+						<span class="inline-block mr-3 whitespace-nowrap">
+							<span class="text-gray-500 font-semibold">{$dr['name_acronym'] ?? '#' . $dr['driver_number']}</span>
+							<span class="font-bold">
+								{if !empty($dr['dnf'])}DNF{elseif !empty($dr['dns'])}DNS{elseif !empty($dr['dsq'])}DSQ{else}P{$dr['position'] ?? '—'}{/if}
+							</span>
+						</span>
+					{/foreach}
+				</td>
+				<td class="px-2 py-2.5 text-right text-[15px] font-bold">{if $gp['points'] > 0}{$gp['points']|number:0,'',''}{/if}</td>
+			</tr>
+		{/foreach}
+		</tbody>
+	</table>
+{/if}
+
+{/block}
