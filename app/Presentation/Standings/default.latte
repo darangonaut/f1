@@ -72,7 +72,7 @@
 			{var $rank = $i + 1}
 			<tr class="border-b-2 border-gray-100 hover:bg-amber-50 {$rank === 1 ? 'bg-red-50 font-bold' : ''}">
 				<td class="px-2 py-2.5 font-black text-lg w-[42px] {$rank === 1 ? 'bg-black text-f1-red' : ($rank === 2 ? 'bg-gray-500 text-white' : ($rank === 3 ? 'bg-amber-800 text-white' : 'text-black'))}">{$rank}</td>
-				<td class="px-2 py-2.5 text-[15px] font-semibold">{$c['team_name']}</td>
+				<td class="px-2 py-2.5 text-[15px] font-semibold"><a href="{plink Constructor:default, id => $c['slug'], year => $year}" class="hover:text-f1-red border-0">{$c['team_name']}</a></td>
 				<td class="px-2 py-2.5 text-right text-[14px] font-semibold {$c['wins'] > 0 ? 'text-f1-red' : 'text-gray-300'}">{$c['wins']}</td>
 				<td class="px-2 py-2.5 text-right text-[14px] font-semibold {$c['podiums'] > 0 ? 'text-black' : 'text-gray-300'}">{$c['podiums']}</td>
 				<td class="px-2 py-2.5 text-right text-[18px] font-black">{$c['total_points']|number:0,'',''}</td>

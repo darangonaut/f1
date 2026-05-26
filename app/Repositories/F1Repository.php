@@ -163,6 +163,66 @@ final class F1Repository
             $year,
             'Race',
         );
+        return array_map(function ($r) {
+            $a = (array) $r;
+            $a['slug'] = self::slug((string) $a['team_name']);
+            return $a;
+        }, $rows);
+    }
+
+    /** URL-safe slug for a constructor name, e.g. "RB F1 Team" → "rb-f1-team". */
+    public static function slug(string $name): string
+    {
+        return trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($name)) ?? '', '-');
+    }
+
+    /** Constructor standings row matched by slug, with championship rank, or null. */
+    public function getConstructor(string $slug, int $year): ?array
+    {
+        foreach ($this->getConstructorStandings($year) as $i => $c) {
+            if ($c['slug'] === $slug) {
+                $c['rank'] = $i + 1;
+                return $c;
+            }
+        }
+        return null;
+    }
+
+    /** Drivers of a constructor in a season with their aggregates. */
+    public function getConstructorDrivers(string $teamName, int $year): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT sr.driver_number, d.full_name, d.name_acronym,
+                    SUM(sr.points) AS total_points,
+                    SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
+                    SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums
+             FROM session_results sr
+             JOIN sessions s ON s.session_key = sr.session_key
+             JOIN meetings m ON m.meeting_key = s.meeting_key
+             JOIN drivers d ON d.driver_number = sr.driver_number AND d.year = ?
+             WHERE m.year = ? AND s.session_type = ? AND d.team_name = ?
+             GROUP BY sr.driver_number, d.full_name, d.name_acronym
+             ORDER BY total_points DESC',
+            $year, $year, 'Race', $teamName,
+        );
+        return array_map(fn($r) => (array) $r, $rows);
+    }
+
+    /** Per-meeting Grand Prix results for a constructor's drivers, ordered by date then position. */
+    public function getConstructorSeason(string $teamName, int $year): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT m.meeting_key, m.meeting_name, m.date_start,
+                    sr.driver_number, d.full_name, d.name_acronym,
+                    sr.position, sr.points, sr.dnf, sr.dns, sr.dsq
+             FROM meetings m
+             JOIN sessions s ON s.meeting_key = m.meeting_key AND s.session_type = ? AND s.session_name = ?
+             JOIN session_results sr ON sr.session_key = s.session_key
+             JOIN drivers d ON d.driver_number = sr.driver_number AND d.year = ?
+             WHERE m.year = ? AND d.team_name = ?
+             ORDER BY m.date_start ASC, CASE WHEN sr.position IS NULL THEN 999 ELSE sr.position END ASC',
+            'Race', 'Race', $year, $year, $teamName,
+        );
         return array_map(fn($r) => (array) $r, $rows);
     }
 
