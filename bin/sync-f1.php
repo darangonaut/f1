@@ -41,14 +41,17 @@ foreach (preg_split('/;\s*$/m', $schemaSql) as $stmt) {
 $args = array_slice($argv, 1);
 $notify = !in_array('--no-notify', $args, true);
 $positional = array_values(array_filter($args, fn($a) => !str_starts_with($a, '--')));
-$year = isset($positional[0]) ? (int) $positional[0] : (int) date('Y');
+$yearExplicit = isset($positional[0]);
+$year = $yearExplicit ? (int) $positional[0] : (int) date('Y');
 echo "[sync] year={$year}" . ($notify ? '' : ' (no-notify)') . "\n";
 $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 $nowDt = new \DateTimeImmutable();
 
-// 1) Schedule
+// 1) Schedule. Only fall back to the previous year for the implicit (cron) case —
+// at season start the current year has no schedule yet. An explicit backfill year
+// must never silently retarget, or a transient empty response writes the wrong year.
 $races = $api->getSchedule($year);
-if (empty($races)) {
+if (empty($races) && !$yearExplicit) {
     echo "[sync] no races for $year, trying previous year\n";
     $year--;
     $races = $api->getSchedule($year);
