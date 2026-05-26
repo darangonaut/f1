@@ -9,7 +9,7 @@ Plaintext F1 stats — Formula 1 results, schedule and standings, in the spirit 
 - **Nette 3.2** (PHP 8.5+) — application framework, routing, DI, Latte templates
 - **Tailwind CSS v4** + Vite — utility-first styling, single CSS bundle
 - **MariaDB / SQLite** — Nette\Database. MariaDB on production, SQLite locally
-- **OpenF1 API** — race data source (https://openf1.org/)
+- **Jolpica-F1 API** — race data source (https://api.jolpi.ca/ergast/), the community successor to Ergast
 
 ## Project layout
 
@@ -25,13 +25,13 @@ f1/
 │   │   ├── Race/                   # one meeting detail (all sessions)
 │   │   └── Standings/              # driver + constructor championship
 │   ├── Repositories/F1Repository.php   # all DB queries
-│   └── Services/OpenF1Client.php       # HTTP client, used only by sync
+│   └── Services/JolpicaClient.php      # HTTP client, used only by sync
 ├── assets/
 │   ├── main.css                    # Tailwind entry + theme tokens
 │   └── main.js                     # imports CSS
 ├── bin/
 │   ├── sync-f1.php                 # cron job (every 15 min on prod)
-│   └── warm-winners.php            # legacy cache-warmer (kept for ref)
+│   └── test-telegram.php           # manual Telegram notification test
 ├── config/
 │   ├── common.neon                 # DB, assets, services
 │   ├── services.neon
@@ -45,7 +45,7 @@ f1/
 
 ```
                     cron (every 15 min)
-   OpenF1 API ─────► bin/sync-f1.php ─────► MariaDB
+ Jolpica-F1 API ───► bin/sync-f1.php ─────► MariaDB
                                               │
                                               ▼
                                       F1Repository
@@ -57,7 +57,7 @@ f1/
                                        Latte templates
 ```
 
-**Page requests never call OpenF1 directly.** They read from DB → fast load (~150 ms).
+**Page requests never call the API directly.** They read from DB → fast load (~150 ms).
 
 ## Local dev
 
@@ -155,15 +155,17 @@ sudo mariadb -e "GRANT ALL PRIVILEGES ON f1.* TO 'f1'@'localhost'; FLUSH PRIVILE
 sudo -u f1 php /var/www/f1/app/bin/sync-f1.php
 ```
 
-## OpenF1 caveats
+## Jolpica-F1 caveats
 
-- **Rate limit:** 3 requests/second. OpenF1Client throttles to ~350 ms between calls.
-- **Partial responses:** OpenF1 occasionally returns empty arrays for valid queries. Sync script retries up to 3× per endpoint; the cron will fill remaining gaps on subsequent runs.
+- **Rate limit:** community API (~4 req/s burst, 500/h sustained for anon). JolpicaClient throttles to ~300 ms between calls; a full-season sync is well under the cap.
+- **Result lag:** classifications usually appear within ~1h of a session. The cron fills gaps on subsequent runs.
+- **No telemetry:** Ergast-style data only (results/standings) — no live timing, weather or race-control feeds.
+- **Synthetic keys:** Ergast has no numeric meeting/session keys, so the sync derives them: `meeting_key = year*100 + round`, `session_key = meeting_key*10 + offset` (Race 0, Qualifying 1, Sprint 2, Sprint Q 3, FP1–3 4–6). Sprint is stored as `session_type='Race'` so its points feed standings.
 - **Endpoints used:**
-  - `/v1/meetings` — race weekends
-  - `/v1/sessions` — Practice/Qualifying/Sprint/Race within a meeting
-  - `/v1/drivers` — driver lineup per session
-  - `/v1/session_result` — final classification (position, points, laps, DNF/DNS/DSQ)
+  - `/{year}/races` — schedule + per-weekend session times
+  - `/{year}/{round}/results` — race classification
+  - `/{year}/{round}/sprint` — sprint classification
+  - `/{year}/{round}/qualifying` — qualifying classification
 
 ## Roadmap / ideas
 
@@ -177,4 +179,4 @@ sudo -u f1 php /var/www/f1/app/bin/sync-f1.php
 
 ## License
 
-Public domain. Data © Formula 1, fetched via openf1.org (free, unaffiliated).
+Public domain. Data © Formula 1, fetched via the Jolpica-F1 API (free, unaffiliated).
