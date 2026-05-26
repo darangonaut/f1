@@ -166,6 +166,71 @@ final class F1Repository
         return array_map(fn($r) => (array) $r, $rows);
     }
 
+    /** Single driver record for a season. */
+    public function getDriver(int $number, int $year): ?array
+    {
+        $row = $this->db->fetch('SELECT * FROM drivers WHERE driver_number = ? AND year = ?', $number, $year);
+        return $row ? (array) $row : null;
+    }
+
+    /** Per-meeting qualifying + race result for one driver in a season, ordered by date. */
+    public function getDriverSeason(int $number, int $year): array
+    {
+        $rows = $this->db->fetchAll(
+            'SELECT m.meeting_key, m.meeting_name, m.country_code, m.date_start,
+                    q.position AS quali_pos,
+                    race.position AS race_pos, race.points AS race_points,
+                    race.dnf, race.dns, race.dsq
+             FROM meetings m
+             JOIN sessions rs ON rs.meeting_key = m.meeting_key AND rs.session_type = ? AND rs.session_name = ?
+             JOIN session_results race ON race.session_key = rs.session_key AND race.driver_number = ?
+             LEFT JOIN sessions qs ON qs.meeting_key = m.meeting_key AND qs.session_name = ?
+             LEFT JOIN session_results q ON q.session_key = qs.session_key AND q.driver_number = ?
+             WHERE m.year = ?
+             ORDER BY m.date_start ASC',
+            'Race', 'Race', $number, 'Qualifying', $number, $year,
+        );
+        return array_map(fn($r) => (array) $r, $rows);
+    }
+
+    /** Season totals for one driver (points/wins/podiums include Sprint, matching standings). */
+    public function getDriverSeasonStats(int $number, int $year): array
+    {
+        $agg = $this->db->fetch(
+            'SELECT SUM(sr.points) AS total_points,
+                    SUM(CASE WHEN sr.position = 1 THEN 1 ELSE 0 END) AS wins,
+                    SUM(CASE WHEN sr.position <= 3 AND sr.position IS NOT NULL THEN 1 ELSE 0 END) AS podiums,
+                    SUM(CASE WHEN sr.dnf = 1 THEN 1 ELSE 0 END) AS dnfs
+             FROM session_results sr
+             JOIN sessions s ON s.session_key = sr.session_key
+             JOIN meetings m ON m.meeting_key = s.meeting_key
+             WHERE m.year = ? AND s.session_type = ? AND sr.driver_number = ?',
+            $year, 'Race', $number,
+        );
+        $poles = $this->db->fetchField(
+            'SELECT COUNT(*) FROM session_results sr
+             JOIN sessions s ON s.session_key = sr.session_key
+             JOIN meetings m ON m.meeting_key = s.meeting_key
+             WHERE m.year = ? AND s.session_name = ? AND sr.driver_number = ? AND sr.position = 1',
+            $year, 'Qualifying', $number,
+        );
+        $best = $this->db->fetchField(
+            'SELECT MIN(sr.position) FROM session_results sr
+             JOIN sessions s ON s.session_key = sr.session_key
+             JOIN meetings m ON m.meeting_key = s.meeting_key
+             WHERE m.year = ? AND s.session_type = ? AND s.session_name = ? AND sr.driver_number = ? AND sr.position IS NOT NULL',
+            $year, 'Race', 'Race', $number,
+        );
+        return [
+            'total_points' => (float) ($agg->total_points ?? 0),
+            'wins' => (int) ($agg->wins ?? 0),
+            'podiums' => (int) ($agg->podiums ?? 0),
+            'dnfs' => (int) ($agg->dnfs ?? 0),
+            'poles' => (int) $poles,
+            'best_finish' => $best !== null && $best !== false ? (int) $best : null,
+        ];
+    }
+
     /** Timestamp of the most recent fetch (across all tables). */
     public function getLastSyncAt(): ?\DateTimeImmutable
     {
