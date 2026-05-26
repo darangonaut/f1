@@ -55,7 +55,7 @@
 						{$pos ?? '—'}
 					</td>
 					<td class="px-2 py-2.5 text-[15px] font-semibold">
-						{if $row['driver']}{$row['driver']['full_name']}{else}#{$row['driver_number']}{/if}
+						<a href="{plink Driver:default, number => $row['driver_number'], year => $meeting['year']}" class="hover:text-f1-red border-0">{if $row['driver']}{$row['driver']['full_name']}{else}#{$row['driver_number']}{/if}</a>
 					</td>
 					<td class="px-2 py-2.5 text-[15px] font-semibold text-gray-500">{$row['driver']['team_name'] ?? ''}</td>
 					<td n:if="$isRace" class="px-2 py-2.5 text-right text-[15px] font-bold">

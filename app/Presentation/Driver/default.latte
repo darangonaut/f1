@@ -1,0 +1,79 @@
+{block content}
+
+<a href="{plink Standings:default, year => $year}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Poradie</a>
+
+<h2 class="text-xl font-black mt-0 mb-1 uppercase tracking-tight">{$driver['full_name'] ?? '#' . $driver['driver_number']}</h2>
+
+<div class="bg-white border-2 border-black p-[18px] mb-6">
+	<div class="flex justify-between items-baseline gap-3">
+		<strong class="text-[15px]">{$driver['team_name']}</strong>
+		<span class="inline-block px-2 py-[3px] bg-black text-white text-[11px] font-bold tracking-[0.06em] uppercase">#{$driver['driver_number']}{if $driver['name_acronym']} · {$driver['name_acronym']}{/if}</span>
+	</div>
+
+	<div class="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 text-center">
+		<div>
+			<div class="text-2xl font-black {$rank === 1 ? 'text-f1-red' : 'text-black'}">{$rank ?? '—'}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Poradie</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black text-black">{$stats['total_points']|number:0,'',''}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Body</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black {$stats['wins'] > 0 ? 'text-f1-red' : 'text-gray-300'}">{$stats['wins']}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Víťazstvá</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black {$stats['podiums'] > 0 ? 'text-black' : 'text-gray-300'}">{$stats['podiums']}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Pódiá</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black {$stats['poles'] > 0 ? 'text-black' : 'text-gray-300'}">{$stats['poles']}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Pole</div>
+		</div>
+		<div>
+			<div class="text-2xl font-black text-black">{$stats['best_finish'] ?? '—'}</div>
+			<div class="text-[10px] font-bold uppercase tracking-[0.08em] text-gray-500">Najlepšie</div>
+		</div>
+	</div>
+</div>
+
+<h3 class="text-[13px] font-black uppercase tracking-[0.14em] mt-8 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+	Sezóna {$year}
+</h3>
+
+{if empty($season)}
+	<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide">Žiadne výsledky.</div>
+{else}
+	<table class="w-full border-collapse tabular-nums">
+		<thead>
+			<tr class="bg-black text-white">
+				<th class="text-left text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5">Veľká cena</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[60px]">Kval</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[70px]">Pretek</th>
+				<th class="text-right text-[11px] uppercase tracking-[0.1em] font-black px-2 py-2.5 w-[60px]">Body</th>
+			</tr>
+		</thead>
+		<tbody>
+		{foreach $season as $r}
+			{var $pos = $r['race_pos']}
+			<tr class="border-b-2 border-gray-100 hover:bg-amber-50 {$pos === 1 ? 'bg-red-50 font-bold' : ''}">
+				<td class="px-2 py-2.5 text-[15px] font-semibold">
+					<a href="{plink Race:default, meetingKey => $r['meeting_key']}" class="hover:text-f1-red border-0">{$r['meeting_name']}</a>
+				</td>
+				<td class="px-2 py-2.5 text-right text-[14px] text-gray-500 font-semibold">{$r['quali_pos'] ?? '—'}</td>
+				<td class="px-2 py-2.5 text-right text-[15px] font-bold">
+					{if !empty($r['dnf'])}<span class="text-gray-400">DNF</span>
+					{elseif !empty($r['dns'])}<span class="text-gray-400">DNS</span>
+					{elseif !empty($r['dsq'])}<span class="text-gray-400">DSQ</span>
+					{else}{$pos ?? '—'}{/if}
+				</td>
+				<td class="px-2 py-2.5 text-right text-[15px] font-bold">{if isset($r['race_points']) && $r['race_points'] > 0}{$r['race_points']|number:0,'',''}{/if}</td>
+			</tr>
+		{/foreach}
+		</tbody>
+	</table>
+{/if}
+
+{/block}
