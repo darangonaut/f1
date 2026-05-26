@@ -17,6 +17,7 @@ final class RouterFactory
 		$router->addRoute('driver/<id>[/<year [0-9]+>]', 'Driver:default');
 		$router->addRoute('constructor/<id>[/<year [0-9]+>]', 'Constructor:default');
 		$router->addRoute('standings[/<year [0-9]+>]', 'Standings:default');
+		$router->addRoute('seasons', 'Seasons:default');
 		$router->addRoute('season/<year [0-9]+>', 'Home:default');
 		$router->addRoute('<presenter>/<action>[/<id>]', 'Home:default');
 		return $router;

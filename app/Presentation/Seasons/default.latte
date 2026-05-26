@@ -1,0 +1,20 @@
+{block content}
+
+<a href="{plink Home:default}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Sezóna</a>
+
+<h2 class="text-[13px] font-black uppercase tracking-[0.14em] text-black mt-0 mb-3 flex items-center gap-2.5 pb-1.5 border-b-[3px] border-black">
+	<span class="w-3.5 h-3.5 bg-f1-red inline-block shrink-0"></span>
+	Všetky sezóny
+</h2>
+
+{if empty($years)}
+	<div class="bg-white border-2 border-gray-200 p-4 text-center text-gray-500 text-xs font-bold uppercase tracking-wide">Žiadne dáta.</div>
+{else}
+	<div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+		{foreach $years as $y}
+			<a href="{plink Home:default, year => $y}" class="block text-center px-2 py-3 border-2 text-[15px] font-black tabular-nums transition-colors {$y === $latest ? 'bg-f1-red text-white border-f1-red' : 'border-black hover:bg-amber-50 hover:text-f1-red'}">{$y}</a>
+		{/foreach}
+	</div>
+{/if}
+
+{/block}
