@@ -81,9 +81,11 @@ Project is linked in Herd from `www/` subdirectory → http://f1.test.
 
 | URL | Presenter |
 |---|---|
-| `/` | Home — season overview, next event, last winner |
+| `/` · `/season/<year>` | Home — season overview, next event + countdown, last winner |
 | `/race/<meetingKey>` | Race — all sessions of one meeting with results |
-| `/standings` | Standings — driver + constructor championship |
+| `/standings` · `/standings/<year>` | Standings — driver + constructor championship |
+| `/driver/<number>[/<year>]` | Driver — season stats + race-by-race results |
+| `/constructor/<slug>[/<year>]` | Constructor — drivers + per-round results |
 
 ## Jolpica-F1 caveats
 
@@ -99,12 +101,12 @@ Project is linked in Herd from `www/` subdirectory → http://f1.test.
 
 ## Roadmap / ideas
 
-- [ ] Driver detail page (`/driver/<number>`) — season stats, race-by-race results
-- [ ] Constructor detail page
+- [x] Driver detail page (`/driver/<number>`) — season stats, race-by-race results
+- [x] Constructor detail page
+- [x] Historical seasons selector
 - [ ] Live timing widget during race weekends (auto-refresh while session is active)
 - [ ] Sprint points separated from main race points in standings
 - [ ] Fastest lap / pole position bonus tracking
-- [ ] Historical seasons selector
 - [ ] RSS feed of race results
 
 ## License
