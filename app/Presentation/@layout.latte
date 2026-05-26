@@ -3,10 +3,10 @@
 	{if count($years) > 1}
 		{if $year !== ($years[0] ?? null)}
 			<div class="mb-3">
-				<span class="inline-flex items-center border-2 border-black">
-					{if $nextYear}<a href="{plink $dest, year => $nextYear}" class="px-2 py-1 text-[13px] font-black leading-none hover:bg-f1-red hover:text-white">‹</a>{else}<span class="px-2 py-1 text-[13px] font-black leading-none text-gray-300">‹</span>{/if}
-					<span class="px-2.5 py-1 text-[13px] font-black leading-none bg-black text-white tabular-nums">{$year}</span>
-					{if $prevYear}<a href="{plink $dest, year => $prevYear}" class="px-2 py-1 text-[13px] font-black leading-none hover:bg-f1-red hover:text-white">›</a>{else}<span class="px-2 py-1 text-[13px] font-black leading-none text-gray-300">›</span>{/if}
+				<span class="inline-flex items-stretch border-2 border-black font-black select-none">
+					{if $nextYear}<a href="{plink $dest, year => $nextYear}" class="flex items-center px-5 py-3 text-xl leading-none hover:bg-f1-red hover:text-white" aria-label="Novšia sezóna">‹</a>{else}<span class="flex items-center px-5 py-3 text-xl leading-none text-gray-300">‹</span>{/if}
+					<span class="flex items-center px-4 py-3 text-base leading-none bg-black text-white tabular-nums border-x-2 border-black">{$year}</span>
+					{if $prevYear}<a href="{plink $dest, year => $prevYear}" class="flex items-center px-5 py-3 text-xl leading-none hover:bg-f1-red hover:text-white" aria-label="Staršia sezóna">›</a>{else}<span class="flex items-center px-5 py-3 text-xl leading-none text-gray-300">›</span>{/if}
 				</span>
 			</div>
 		{/if}
