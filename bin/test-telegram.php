@@ -41,7 +41,7 @@ if (!$row) {
 $results = $db->fetchAll(
     "SELECT sr.*, d.full_name, d.team_name
      FROM session_results sr
-     LEFT JOIN drivers d ON d.driver_number = sr.driver_number AND d.year = ?
+     LEFT JOIN drivers d ON d.driver_id = sr.driver_id AND d.year = ?
      WHERE sr.session_key = ? AND sr.position IS NOT NULL ORDER BY sr.position LIMIT 3",
     $row->year, $row->session_key,
 );
@@ -51,7 +51,7 @@ $medals = ['🥇', '🥈', '🥉'];
 $lines = [];
 foreach ($results as $i => $r) {
     $pts = isset($r->points) ? ' \\(' . (int) $r->points . ' pts\\)' : '';
-    $lines[] = ($medals[$i] ?? ($i + 1) . '.') . ' ' . $esc($r->full_name ?? '#' . $r->driver_number) . ' — ' . $esc($r->team_name ?? '') . $pts;
+    $lines[] = ($medals[$i] ?? ($i + 1) . '.') . ' ' . $esc($r->full_name ?? $r->driver_id) . ' — ' . $esc($r->team_name ?? '') . $pts;
 }
 $url = 'https://f1\\.markuska\\.cz/race/' . $row->meeting_key;
 $text = "🧪 TEST notifikácie\n\n🏁 *" . $esc($row->meeting_name) . "*\n\n"

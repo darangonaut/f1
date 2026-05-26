@@ -2,12 +2,14 @@
 
 <a href="{plink Standings:default, year => $year}" class="text-sm font-semibold inline-block mb-4 text-f1-red hover:text-black">← Poradie</a>
 
-<h2 class="text-xl font-black mt-0 mb-1 uppercase tracking-tight">{$driver['full_name'] ?? '#' . $driver['driver_number']}</h2>
+<h2 class="text-xl font-black mt-0 mb-1 uppercase tracking-tight">{$driver['full_name'] ?? $driver['driver_id']}</h2>
 
 <div class="bg-white border-2 border-black p-[18px] mb-6">
 	<div class="flex justify-between items-baseline gap-3">
 		<strong class="text-[15px]">{$driver['team_name']}</strong>
-		<span class="inline-block px-2 py-[3px] bg-black text-white text-[11px] font-bold tracking-[0.06em] uppercase">#{$driver['driver_number']}{if $driver['name_acronym']} · {$driver['name_acronym']}{/if}</span>
+		{if $driver['driver_number'] || $driver['name_acronym']}
+			<span class="inline-block px-2 py-[3px] bg-black text-white text-[11px] font-bold tracking-[0.06em] uppercase">{if $driver['driver_number']}#{$driver['driver_number']}{/if}{if $driver['driver_number'] && $driver['name_acronym']} · {/if}{$driver['name_acronym']}</span>
+		{/if}
 	</div>
 
 	<div class="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 text-center">

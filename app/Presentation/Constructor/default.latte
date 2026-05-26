@@ -32,8 +32,8 @@
 
 <div class="space-y-2 mb-6">
 	{foreach $drivers as $d}
-		<a href="{plink Driver:default, number => $d['driver_number'], year => $year}" class="flex justify-between items-baseline gap-3 bg-white border-2 border-gray-100 hover:border-f1-red hover:bg-amber-50 transition-colors p-3 border-0">
-			<span class="text-[15px] font-bold">{$d['full_name'] ?? '#' . $d['driver_number']}</span>
+		<a href="{plink Driver:default, id => $d['driver_id'], year => $year}" class="flex justify-between items-baseline gap-3 bg-white border-2 border-gray-100 hover:border-f1-red hover:bg-amber-50 transition-colors p-3 border-0">
+			<span class="text-[15px] font-bold">{$d['full_name'] ?? $d['driver_id']}</span>
 			<span class="text-[14px] font-semibold text-gray-500">
 				{$d['total_points']|number:0,'',''} b
 				{if $d['wins'] > 0} · {$d['wins']} V{/if}
@@ -68,7 +68,7 @@
 				<td class="px-2 py-2.5 text-[14px]">
 					{foreach $gp['drivers'] as $dr}
 						<span class="inline-block mr-3 whitespace-nowrap">
-							<span class="text-gray-500 font-semibold">{$dr['name_acronym'] ?? '#' . $dr['driver_number']}</span>
+							<span class="text-gray-500 font-semibold">{$dr['name_acronym'] ?? $dr['full_name'] ?? $dr['driver_id']}</span>
 							<span class="font-bold">
 								{if !empty($dr['dnf'])}DNF{elseif !empty($dr['dns'])}DNS{elseif !empty($dr['dsq'])}DSQ{else}P{$dr['position'] ?? '—'}{/if}
 							</span>
